@@ -1,7 +1,21 @@
+# Chat CRM
+
+Plataforma de atendimento omnichannel, CRM e automacao comercial mantida pela
+FP Informatica e Correia Cloud. Esta distribuicao contem a personalizacao de
+marca, fluxos comerciais, integracoes, PWA, notificacoes e recursos operacionais
+do Chat CRM.
+
+## Origem e creditos
+
+O Chat CRM e uma distribuicao derivada do projeto open source Ticketz. O codigo
+de origem e seus respectivos creditos, avisos de copyright e termos da AGPL-3.0
+permanecem preservados neste repositorio. As personalizacoes deste projeto sao
+mantidas separadamente pela equipe Chat CRM.
+
 [![en](https://img.shields.io/badge/lang-en-green.svg)](README.md)
 [![pt-br](https://img.shields.io/badge/lang-pt--br-red.svg)](README.pt.md)
 
-# About the Project
+## Sobre o projeto de origem
 
 Ticketz is a communicator with CRM and helpdesk features that utilizes WhatsApp as a means of communication with clients.
 
