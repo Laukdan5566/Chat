@@ -30,7 +30,10 @@ rollback_file="$HOME/chat-crm-release/rollback-$(date +%Y%m%d-%H%M%S).env"
 mkdir -p "$(dirname "$rollback_file")"
 printf 'BACKEND_IMAGE=%s\nFRONTEND_IMAGE=%s\n' "$old_backend" "$old_frontend" > "$rollback_file"
 
-"${compose[@]}" pull backend frontend
+if [[ "${SKIP_PULL:-0}" != "1" ]]; then
+  "${compose[@]}" pull backend frontend
+fi
+
 "${compose[@]}" \
   up -d --no-build --force-recreate --no-deps backend frontend
 
