@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 96" role="img" aria-label="VIB">
+  <rect width="240" height="96" rx="16" fill="#162235"/>
+  <path d="M26 26h50L52 72H26l18-23Z" fill="#39ACE7"/>
+  <path d="M62 26h28L66 72H38l18-23Z" fill="#70D7FF" opacity=".95"/>
+  <text x="108" y="61" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="43" font-weight="700">VIB</text>
+</svg>

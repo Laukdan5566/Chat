@@ -1,0 +1,12 @@
+/node_modules
+/dist
+/coverage
+/public/*
+/.well-known
+/.env
+/.externalToolBuilders/
+/.project
+/.settings/
+/private/*
+!/private/index.html
+/src/generated

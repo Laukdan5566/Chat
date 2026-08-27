@@ -1,0 +1,35 @@
+.docker
+*~
+/.project
+.externalToolBuilders/
+.vscode/
+firebase-service-account*.json
+*firebase-adminsdk*.json
+**/certification/
+**/certs/
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Local and server-specific configuration. Keep secrets out of the release repo.
+.env
+.env.*
+!.env.example
+!*.example
+
+# Generated packages, builds, backups and other deployment artifacts.
+**/node_modules/
+**/build/
+**/dist/
+**/coverage/
+*.apk
+*.tar.gz
+*.zip
+*.log
+deploy-*/
+frontend/build-*/
+frontend/public/downloads/
+
+# Workflow exports can carry credentials. They are versioned only after review.
+n8n/

@@ -1,0 +1,11 @@
+{
+  "short_name": "Chat FP",
+  "name": "Chat FP",
+  "icons": [
+    { "src": "vector/brand-chat.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#FF9F00",
+  "background_color": "#202D3E"
+}

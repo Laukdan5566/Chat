@@ -1,0 +1,94 @@
+import { Sequelize } from "sequelize";
+import User from "../../models/User";
+import AppError from "../../errors/AppError";
+import {
+  createAccessToken,
+  createRefreshToken
+} from "../../helpers/CreateTokens";
+import { SerializeUser } from "../../helpers/SerializeUser";
+import Queue from "../../models/Queue";
+import Company from "../../models/Company";
+import Plan from "../../models/Plan";
+import Setting from "../../models/Setting";
+import { GetCompanySetting } from "../../helpers/CheckSettings";
+import UpdateSettingService from "../SettingServices/UpdateSettingService";
+
+interface SerializedUser {
+  id: number;
+  name: string;
+  email: string;
+  profile: string;
+  permissions: Record<string, boolean>;
+  queues: Queue[];
+  companyId: number;
+}
+
+interface Request {
+  email: string;
+  password: string;
+  language?: string;
+}
+
+interface Response {
+  serializedUser: SerializedUser;
+  token: string;
+  refreshToken: string;
+}
+
+const AuthUserService = async ({
+  email,
+  password,
+  language
+}: Request): Promise<Response> => {
+  const user = await User.findOne({
+    where: Sequelize.where(
+      Sequelize.fn("LOWER", Sequelize.col("email")),
+      email.toLowerCase()
+    ),
+    include: [
+      "queues",
+      {
+        model: Company,
+        include: [
+          { model: Setting },
+          {
+            model: Plan,
+            as: "plan",
+            attributes: ["id", "name", "facebookEnabled", "instagramEnabled"]
+          }
+        ]
+      }
+    ]
+  });
+
+  if (!user) {
+    throw new AppError("ERR_INVALID_CREDENTIALS", 401);
+  }
+
+  if (!(await user.checkPassword(password))) {
+    throw new AppError("ERR_INVALID_CREDENTIALS", 401);
+  }
+
+  if (user.super && language) {
+    if (!(await GetCompanySetting(1, "defaultLanguage", null))) {
+      UpdateSettingService({
+        key: "defaultLanguage",
+        value: language,
+        companyId: 1
+      });
+    }
+  }
+
+  const token = createAccessToken(user);
+  const refreshToken = createRefreshToken(user);
+
+  const serializedUser = await SerializeUser(user);
+
+  return {
+    serializedUser,
+    token,
+    refreshToken
+  };
+};
+
+export default AuthUserService;

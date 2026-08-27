@@ -1,0 +1,11 @@
+{
+  "short_name": "VIB",
+  "name": "VIB",
+  "icons": [
+    { "src": "vector/brand-vib.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#39ACE7",
+  "background_color": "#162235"
+}
