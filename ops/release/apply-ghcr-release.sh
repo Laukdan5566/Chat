@@ -35,6 +35,6 @@ if [[ "${SKIP_PULL:-0}" != "1" ]]; then
 fi
 
 "${compose[@]}" \
-  up -d --no-build --force-recreate --no-deps backend frontend
+  up -d --pull never --no-build --force-recreate --no-deps backend frontend
 
 echo "Release $RELEASE_ID active. Rollback image references: $rollback_file"
