@@ -1,188 +1,152 @@
 # Chat CRM
 
-Plataforma de atendimento omnichannel, CRM e automacao comercial mantida pela
-FP Informatica e Correia Cloud. Esta distribuicao contem a personalizacao de
-marca, fluxos comerciais, integracoes, PWA, notificacoes e recursos operacionais
-do Chat CRM.
-
-## Origem e creditos
-
-O Chat CRM e uma distribuicao derivada do projeto open source Ticketz. O codigo
-de origem e seus respectivos creditos, avisos de copyright e termos da AGPL-3.0
-permanecem preservados neste repositorio. As personalizacoes deste projeto sao
-mantidas separadamente pela equipe Chat CRM.
+Chat CRM is the FP Informatica and Correia Cloud distribution for omnichannel
+service, CRM and commercial automation. It includes the product brand, PWA,
+notifications, commercial routing, integrations and operational flows used by
+the Chat CRM platform.
 
 [![en](https://img.shields.io/badge/lang-en-green.svg)](README.md)
 [![pt-br](https://img.shields.io/badge/lang-pt--br-red.svg)](README.pt.md)
 
-## Sobre o projeto de origem
+## Repository and releases
 
-Ticketz is a communicator with CRM and helpdesk features that utilizes WhatsApp as a means of communication with clients.
+Source code and approved release images are published from this repository.
+Application images are built by GitHub Actions and published to GitHub
+Container Registry (GHCR). Production must consume a tested image tag; it must
+not build application code directly on the live server.
 
-## Original Authorship
+## Local development
 
-This project was initiated in [an Open Source project](https://github.com/canove/whaticket-community), published by the developer [Cassio Santos](https://github.com/canove) under the permissive MIT license. It later received various improvements by unidentified authors and was commercially distributed directly between developers and users with the provision of source code. According to information from [this video, it was leaked and publicly released at some point](https://www.youtube.com/watch?v=SX_cGD5RLkQ).
-
-After some research, it was further identified that the first SaaS version of Whaticket was created by the developer [Wender Teixeira](https://github.com/w3nder), including a version of [Whaticket Single](https://github.com/unkbot/whaticket-free) that uses the Baileys library for WhatsApp access.
-
-It is practically impossible to identify and credit the authors of the improvements. [The code published by the Vem Fazer channel](https://github.com/vemfazer/whaticket-versao-03-12-canal-vem-fazer) does not mention any license; therefore, I am assuming that all authors are comfortable with keeping these changes under the same license as the original project (MIT).
-
-## Relicensing
-
-As I am making these changes and providing them at no cost, I want them to be available to everyone. Therefore, I am choosing to relicense under the AGPL, which requires that every user who has access to the system can obtain the source code.
-
-Therefore, if you directly utilize this version, it is **very important to keep the link on the "About Ticketz" screen, which provides access to the repository**. If you wish, you can move the link to the source code elsewhere, but it must be easily accessible to any system user.
-
-If you make changes to the code, you must change the link to a repository or another way to obtain the code for your changes.
-
-If you wish to use parts of the code to fix any code **for your own use**, feel free to do so and you don't need to worry about the AGPL license. However, if you want to use any part added in this project in a system that you commercialize, you must either provide the code of your entire system to its users, or you must contact the author of the code to license it under different criteria.
-
-## Objective
-
-The objective of this project is to improve and keep open updates about the published Whaticket SaaS. Mainly focused on application quality and ease of installation and use.
-
-The improvements developed by me will be placed here, and depending on the situation, I can transpose, always crediting, codes and improvements published in other projects also derived from Whaticket Community or Whaticket SaaS.
-
-## Contributing Back
-
-Whenever possible, I intend to backport some adjustments made here to the original projects.
-
-Very Quick Start on a public Server
------------------------------------
-
-There are Docker images provided from the project, so you can get **ticketz** to work very easily on a public server (baremetal or VPS).
-
-### First setup
-
-Before starting you must complete this checklist:
-
-- [ ] Have a clean server running Ubuntu 20 or newer
-- [ ] Ports 80 and 443 available and not filtered by firewall
-- [ ] One hostname with configured DNS pointing to your server
-
-After this, just log in to your server and issue the following command, replacing the hostnames you already configured and your email address:
+Requirements: Docker Compose and Git.
 
 ```bash
-curl -sSL get.ticke.tz | sudo bash -s app.example.com name@example.com
+git clone https://github.com/Laukdan5566/Chat.git chat-crm
+cd chat-crm
 ```
 
-After a few minutes you will have the server running at the hostname you defined.
+Create the private environment files for the target environment before
+starting the stack. They are deliberately not versioned:
 
-The default login will be the email address provided in the installation command and the default password is `123456`, you must change it right away.
+```text
+.env-backend-local
+.env-frontend-local
+```
 
-### Upgrade
-
-The upgrade is just easy as the instalation, you just need to login to your server using the same username you used on the installation and issue the following command:
+Start a local stack:
 
 ```bash
-curl -sSL update.ticke.tz | sudo bash
+docker compose -f docker-compose-local.yaml up -d --build
 ```
 
-Your server will go down and after some minutes it will be running in the latest released version.
-
-### Inspect logs
-
-As all elements are running in containers the logs must be checked through the docker command.
-
-You must login to your server using the same user you used for the installation.
-
-First you need to move the current directory to the installation folder:
+Follow service logs when needed:
 
 ```bash
-cd ~/ticketz-docker-acme
+docker compose -f docker-compose-local.yaml logs -f backend frontend
 ```
 
-After this you can get a full log report with the following command:
-
-```bash
-docker compose logs -t
-```
-
-If you want to "tail follow" the logs just add a `-f` parameter to that command:
-
-```bash
-docker compose logs -t -f
-
-```
-
-Running from Source code Using Docker
--------------------------------------
-
-For installation, you need to have Docker Community Edition and the Git client installed. It is ideal to find the best way to install these resources on your preferred operating system. [The official Docker installation guide can be found here](https://docs.docker.com/engine/install/).
-
-In both cases, it is necessary to clone the repository, then open a command terminal:
-
-```bash
-git clone https://github.com/allgood/ticketz.git
-cd ticketz
-```
-
-## Running Locally
-
-By default, the configuration is set to run the system only on the local computer. To run it on a local network, you need to edit the `.env-backend-local` and `.env-frontend-local` files and change the backend and frontend addresses from `localhost` to the desired IP, for example, `192.168.0.10`.
-
-To run the system, simply execute the following command:
-
-```bash
-docker compose -f docker-compose-local.yaml up -d
-```
-
-On the first run, the system will initialize the databases and tables, and after a few minutes, Ticketz will be accessible through port 3000.
-
-The default username is `admin@ticketz.host`, and the default password is 123456.
-
-The application will restart automatically after each server reboot.
-
-Execution can be stopped with the command:
+Stop the local stack:
 
 ```bash
 docker compose -f docker-compose-local.yaml down
 ```
 
-## Running and Serving on the Internet
+## Release flow
 
-Having a server accessible via the internet, it is necessary to adjust two DNS names of your choice, one for the backend and another for the frontend, and also an email address for certificate registration, for example:
+1. Implement and validate the change locally.
+2. Push the approved commit to `main`.
+3. Wait for the GitHub Actions workflow **Publish Chat CRM images** to finish.
+4. Deploy the resulting Git SHA to VIB and run the functional checks there.
+5. Promote that exact SHA to production only after VIB approval.
 
-* **backend:** api.ticketz.example.com
-* **frontend:** ticketz.example.com
-* **email:** ticketz@example.com
+The frontend and backend use the same Git SHA. This makes every deployment
+traceable and gives rollback a known image reference.
 
-You need to edit the `.env-backend-acme` and `.env-frontend-acme` files, defining these values in them.
+## VIB or production deployment
 
-If you want to use reCAPTCHA in the company signup, you also need to insert the secret and site keys in the backend and frontend files, respectively.
-
-This guide assumes that the terminal is open and logged in with a regular user who has permission to use the `sudo` command to execute commands as root.
-
-Being in the project's root folder, execute the following command to start the service:
-
-```bash
-sudo docker compose -f docker-compose-acme.yaml up -d
-```
-
-On the first run, Docker will compile the code and create the containers, and then Ticketz will initialize the databases and tables. This operation can take quite some time, after which Ticketz will be accessible at the provided frontend address.
-
-The default username is the email address provided on the `.env-backend-acme` file and the default password is 123456.
-
-The application will restart automatically after each server reboot.
-
-To terminate the service, use the following command:
+Install the release helper and compose override once on the target server:
 
 ```bash
-sudo docker compose -f docker-compose-acme.yaml down
+mkdir -p "$HOME/chat-crm-release"
+cp ops/release/docker-compose.ghcr.yml "$HOME/chat-crm-release/"
+cp ops/release/apply-ghcr-release.sh "$HOME/chat-crm-release/"
+chmod +x "$HOME/chat-crm-release/apply-ghcr-release.sh"
 ```
 
-Important Notice
-----------------
+After the GHCR images are available, deploy an approved SHA:
 
-This project is not affiliated with Meta, WhatsApp, or any other company. The use of the provided code is the sole responsibility of the users and does not imply any liability for the author or project collaborators.
+```bash
+"$HOME/chat-crm-release/apply-ghcr-release.sh" <git-sha>
+```
 
-Made Your Life Easier?
-----------------------
+The helper records the active frontend and backend images before replacing
+them, pulls only the two application images, and recreates only those two
+containers. PostgreSQL, Redis, volumes and compose configuration are left
+untouched.
 
-If this project has helped you with a complex task, consider making a donation to the author via PayPal or Brazilian PIX below.
+Validate the public interface, `/backend/`, Socket.IO, WhatsApp connections
+and the affected user journey before promoting an image to production.
 
-[![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=X6XHVCPMRQEL4)
+## Rollback
 
-![image](https://github.com/ticketz-oss/ticketz/assets/6070736/8e85b263-73ca-4fb4-9bdc-03fff356b6ff)
+The deploy helper writes a file such as
+`$HOME/chat-crm-release/rollback-YYYYMMDD-HHMMSS.env`. To restore it, load the
+saved image references and recreate only frontend and backend with the same
+compose files used by the helper:
 
-PIX Key: 0699c69d-0951-4686-a5b7-c6cd21aa7e15
+```bash
+set -a
+source "$HOME/chat-crm-release/rollback-YYYYMMDD-HHMMSS.env"
+set +a
+
+# Set these once for the target server's private Compose configuration.
+export BASE_COMPOSE=/path/to/docker-compose.yml
+export LOCAL_OVERRIDE=/path/to/docker-compose.override.yml
+
+docker compose \
+  -f "$BASE_COMPOSE" \
+  -f "$LOCAL_OVERRIDE" \
+  -f "$HOME/chat-crm-release/docker-compose.ghcr.yml" \
+  pull backend frontend
+
+docker compose \
+  -f "$BASE_COMPOSE" \
+  -f "$LOCAL_OVERRIDE" \
+  -f "$HOME/chat-crm-release/docker-compose.ghcr.yml" \
+  up -d --no-build --force-recreate --no-deps backend frontend
+```
+
+## Security and operations
+
+- Never commit credentials, private keys, certificates, mobile artifacts or
+  production environment files.
+- Keep production changes limited to approved application images.
+- Keep database, Redis, volumes, media and rollback artifacts intact.
+- Use the same tested SHA in VIB and production.
+
+## Origin, authorship and license
+
+Chat CRM is a derivative distribution of the open-source Ticketz project.
+Original credits, copyright notices and AGPL-3.0 obligations are preserved in
+this repository, including [LICENSE.md](LICENSE.md). Chat CRM-specific changes
+are maintained by the Chat CRM team.
+
+### Original authorship
+
+This project was initiated in [an Open Source project](https://github.com/canove/whaticket-community), published by the developer [Cassio Santos](https://github.com/canove) under the permissive MIT license. It later received various improvements by unidentified authors and was commercially distributed directly between developers and users with the provision of source code. According to information from [this video, it was leaked and publicly released at some point](https://www.youtube.com/watch?v=SX_cGD5RLkQ).
+
+After some research, it was further identified that the first SaaS version of Whaticket was created by the developer [Wender Teixeira](https://github.com/w3nder), including a version of [Whaticket Single](https://github.com/unkbot/whaticket-free) that uses the Baileys library for WhatsApp access.
+
+It is practically impossible to identify and credit the authors of all improvements. The published code does not consistently identify a license; the original MIT attribution and the applicable AGPL-3.0 terms are retained here.
+
+### Relicensing notice
+
+The project is distributed under the AGPL-3.0. Anyone using a modified network
+service must retain an accessible way for users to obtain the corresponding
+source code, as required by that license. If this distribution is changed,
+update the source-code reference accordingly.
+
+## Notice
+
+Chat CRM is not affiliated with Meta, WhatsApp or their respective companies.
+Use of WhatsApp integrations is the responsibility of each deploying company
+and must comply with the relevant platform policies.
