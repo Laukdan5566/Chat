@@ -146,7 +146,7 @@ export async function registerNativePushNotifications() {
           id: "ticketz_messages",
           name: /(^|\.)vib\./i.test(window.location.hostname)
             ? "Mensagens VIB"
-            : "Mensagens Chat FP",
+            : "Mensagens Chat CRM",
           description: "Alertas de novas mensagens dos atendimentos",
           importance: 5,
           visibility: 1,

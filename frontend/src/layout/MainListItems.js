@@ -48,7 +48,7 @@ import { makeStyles } from "@material-ui/core/styles";
 import Typography from "@material-ui/core/Typography";
 import { hasUserPermission } from "../helpers/userPermissions";
 
-const appVersionLabel = "Chat FP v1.0.1";
+const appVersionLabel = "Chat CRM v1.0.1";
 const appBuildLabel = "FP Informática";
 
 const useStyles = makeStyles(theme => ({

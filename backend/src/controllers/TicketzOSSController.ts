@@ -44,7 +44,7 @@ export async function store(req: Request, res: Response): Promise<Response> {
     hostname,
     name: req.body.name,
     whatsapp: req.body.whatsapp,
-    email: process.env.EMAIL_ADDRESS || "admin@ticketz.host",
+    email: process.env.EMAIL_ADDRESS || "admin@chatcrm.local",
     version: GitInfo.tagName || GitInfo.branchName || GitInfo.commitHash
   };
 

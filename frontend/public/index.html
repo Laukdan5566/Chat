@@ -20,7 +20,7 @@
         const isVib = /(^|\.)vib\./i.test(window.location.hostname);
         window.__initialBrand = isVib
           ? { name: "VIB", logo: "/vector/brand-vib.svg", primary: "#39ACE7" }
-          : { name: "Chat FP", logo: "/vector/brand-chat.svg", primary: "#FF9F00" };
+          : { name: "Chat CRM", logo: "/vector/brand-chat.svg", primary: "#FF9F00" };
         document.title = window.__initialBrand.name;
         document.querySelector("#app-manifest").href =
           "%PUBLIC_URL%/" + (isVib ? "manifest-vib.json" : "manifest-chat.json");
@@ -324,7 +324,7 @@
 
       window.mentionRenderer = mention => {
         return (
-          `<span class="ticketzMention" onclick='window.mentionClick(${JSON.stringify(mention).replace(/'/g, "\\'")})'>@` +
+          `<span class="chatMention" onclick='window.mentionClick(${JSON.stringify(mention).replace(/'/g, "\\'")})'>@` +
           (mention?.name || mention?.number || "invalid mention") +
           "</span>"
         );

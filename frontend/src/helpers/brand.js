@@ -10,7 +10,7 @@ export const getBrand = () => {
   }
 
   return {
-    name: "Chat FP",
+    name: "Chat CRM",
     logo: "/vector/brand-chat.svg",
     primary: "#FF9F00"
   };

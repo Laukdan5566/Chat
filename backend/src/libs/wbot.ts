@@ -313,8 +313,13 @@ export const initWASocket = async (
           }
         };
 
+        const configuredAppName = await GetPublicSettingService({
+          key: "appName"
+        });
         const appName =
-          (await GetPublicSettingService({ key: "appName" })) || "Chat FP";
+          !configuredAppName || /^ticketz$/i.test(configuredAppName.trim())
+            ? "Chat CRM"
+            : configuredAppName;
         const hostName = process.env.BACKEND_URL?.split("/")[2];
         const appVersion = GitInfo.tagName || GitInfo.commitHash;
         const clientName = `${appName} ${appVersion}${

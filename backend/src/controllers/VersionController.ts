@@ -9,7 +9,7 @@ export const version = async (
   const appName = await GetPublicSettingService({ key: "appName" });
 
   const data = {
-    name: appName || "Chat FP",
+    name: !appName || /^ticketz$/i.test(appName.trim()) ? "Chat CRM" : appName,
     ...GitInfo
   };
 

@@ -200,7 +200,7 @@ const CreateZammadTicketService = async ({
   const messageHistory = includeMessages ? await formatMessages(ticketId) : "";
   const contactEmail =
     ticket.contact.email ||
-    `${ticket.contact.number || ticket.contactId}@ticketz.local`;
+    `${ticket.contact.number || ticket.contactId}@chatcrm.local`;
   const zammadGroup = await resolveZammadGroupName(
     zammadUrl,
     zammadToken,
@@ -215,7 +215,7 @@ const CreateZammadTicketService = async ({
     "",
     publicRequest
       ? `Origem: site da FP Informática (protocolo ${ticket.id})`
-      : `Ticketz: #${ticket.id}`,
+      : `Chat CRM: #${ticket.id}`,
     ticketzUrl ? `Conversa: ${ticketzUrl}` : null,
     `Cliente: ${ticket.contact.name}`,
     `Telefone: ${ticket.contact.number}`,

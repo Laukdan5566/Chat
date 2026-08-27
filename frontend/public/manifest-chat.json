@@ -1,6 +1,6 @@
 {
-  "short_name": "Chat FP",
-  "name": "Chat FP",
+  "short_name": "Chat CRM",
+  "name": "Chat CRM",
   "icons": [
     { "src": "vector/brand-chat.svg", "sizes": "any", "type": "image/svg+xml" }
   ],

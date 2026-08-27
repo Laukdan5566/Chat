@@ -684,20 +684,20 @@ const messages = {
       },
       about: {
         aboutthe: "Informazioni su",
-        copyright: "© 2024 - Funzionante con ticketz",
+        copyright: "© 2024 - Funzionante con Chat CRM",
         buttonclose: "Chiudi",
-        title: "Informazioni su ticketz",
+        title: "Informazioni su Chat CRM",
         abouttitle: "Origine e miglioramenti",
         aboutdetail:
-          "Il ticketz è derivato indirettamente dal progetto Whaticket con miglioramenti condivisi dagli sviluppatori del sistema EquipeChat attraverso il canale VemFazer su YouTube, successivamente migliorati da Claudemir Todo Bom",
+          "Il Chat CRM è derivato indirettamente dal progetto Whaticket con miglioramenti condivisi dagli sviluppatori del sistema EquipeChat attraverso il canale VemFazer su YouTube, successivamente migliorati da Claudemir Todo Bom",
         aboutauthorsite: "Sito dell'autore",
         aboutwhaticketsite: "Sito della comunità Whaticket su Github",
         aboutvemfazersite: "Sito del canale Vem Fazer su Github",
         licenseheading: "Licenza Open Source",
         licensedetail:
-          "Il ticketz è concesso in licenza sotto la GNU Affero General Public License versione 3, il che significa che qualsiasi utente che ha accesso a questa applicazione ha il diritto di ottenere l'accesso al codice sorgente. Maggiori informazioni nei link sottostanti:",
+          "Il Chat CRM è concesso in licenza sotto la GNU Affero General Public License versione 3, il che significa che qualsiasi utente che ha accesso a questa applicazione ha il diritto di ottenere l'accesso al codice sorgente. Maggiori informazioni nei link sottostanti:",
         licensefulltext: "Testo completo della licenza",
-        licensesourcecode: "Codice sorgente di ticketz"
+        licensesourcecode: "Codice sorgente di Chat CRM"
       },
       schedules: {
         title: "Pianificazioni",
@@ -1063,18 +1063,18 @@ const messages = {
         ERR_WAPP_GREETING_REQUIRED:
           "Il messaggio di benvenuto è obbligatorio quando ci sono più code."
       },
-      ticketz: {
+      chatCRM: {
         registration: {
-          header: "Registrati nella base utenti di Ticketz",
+          header: "Registrati nella base utenti di Chat CRM",
           description:
-            "Compila i campi sottostanti per registrarti nella base utenti di Ticketz e ricevere aggiornamenti sul progetto.",
+            "Compila i campi sottostanti per registrarti nella base utenti di Chat CRM e ricevere aggiornamenti sul progetto.",
           name: "Nome",
           country: "Paese",
           phoneNumber: "Numero di WhatsApp",
           submit: "Registrati"
         },
         support: {
-          title: "Supporta il progetto Ticketz Open Source",
+          title: "Supporta il progetto Chat CRM Open Source",
           mercadopagotitle: "Carta di Credito",
           recurringbrl: "Donazione ricorrente in R$",
           paypaltitle: "Carta di Credito",

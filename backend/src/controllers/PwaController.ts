@@ -7,6 +7,9 @@ export const manifest = async (
 ): Promise<Response> => {
   const appName = await GetPublicSettingService({ key: "appName" });
   const logoFavicon = await GetPublicSettingService({ key: "appLogoFavicon" });
+  const productName = !appName || /^ticketz$/i.test(appName.trim())
+    ? "Chat CRM"
+    : appName;
 
   const mimes = {
     svg: "image/svg+xml",
@@ -22,8 +25,8 @@ export const manifest = async (
   }
 
   const data = {
-    short_name: appName || "TIcketz",
-    name: appName || "Chat FP",
+    short_name: productName,
+    name: productName,
     icons: [
       {
         src: logoFavicon

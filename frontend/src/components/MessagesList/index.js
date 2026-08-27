@@ -70,7 +70,7 @@ const useStyles = makeStyles(theme => ({
       fontWeight: "bold",
       textDecoration: "none"
     },
-    "& span.ticketzMention": {
+    "& span.chatMention": {
       color: theme.palette.primary.main,
       fontWeight: "bold",
       cursor: "pointer"
@@ -1701,7 +1701,7 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
                   style={{ display: "flex" }}
                 >
                   <span
-                    class="ticketzMention"
+                    class="chatMention"
                     onClick={() => handleContactClick(name, metaNumber)}
                   >
                     {number}

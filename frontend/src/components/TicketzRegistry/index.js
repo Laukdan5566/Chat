@@ -60,14 +60,14 @@ const TicketzRegistry = ({ onRegister }) => {
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <Typography component="h2" variant="h6" gutterBottom>
-            {i18n.t("ticketz.registration.header")}
+            {i18n.t("chatCRM.registration.header")}
           </Typography>
-          <p>{i18n.t("ticketz.registration.description")}</p>
+          <p>{i18n.t("chatCRM.registration.description")}</p>
         </Grid>
         <Grid item xs={12} md={4}>
           <TextField
             className={classes.fullWidth}
-            label={i18n.t("ticketz.registration.name")}
+            label={i18n.t("chatCRM.registration.name")}
             name="name"
             value={formData.name}
             onChange={handleChange}
@@ -77,7 +77,7 @@ const TicketzRegistry = ({ onRegister }) => {
         <Grid item xs={12} md={3}>
           <SelectCountry
             className={classes.fullWidth}
-            label={i18n.t("ticketz.registration.country")}
+            label={i18n.t("chatCRM.registration.country")}
             value={formData.country}
             onChange={handleChange}
             name="country"
@@ -86,7 +86,7 @@ const TicketzRegistry = ({ onRegister }) => {
         <Grid item xs={12} md={3}>
           <TextField
             className={classes.fullWidth}
-            label={i18n.t("ticketz.registration.phoneNumber")}
+            label={i18n.t("chatCRM.registration.phoneNumber")}
             name="phoneNumber"
             value={formData.phoneNumber}
             onChange={handleChange}
@@ -108,7 +108,7 @@ const TicketzRegistry = ({ onRegister }) => {
             variant="contained"
             color="primary"
           >
-            {i18n.t("ticketz.registration.submit")}
+            {i18n.t("chatCRM.registration.submit")}
           </Button>
         </Grid>
       </Grid>

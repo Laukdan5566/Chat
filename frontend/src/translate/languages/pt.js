@@ -797,20 +797,20 @@ const messages = {
       },
       about: {
         aboutthe: "Sobre o",
-        copyright: "© 2024 - Funcionando com ticketz",
+        copyright: "© 2024 - Funcionando com Chat CRM",
         buttonclose: "Fechar",
-        title: "Sobre o ticketz",
+        title: "Sobre o Chat CRM",
         abouttitle: "Origem e melhorias",
         aboutdetail:
-          "O ticketz é derivado indireto do projeto Whaticket com melhorias compartilhadas pelos desenvolvedores do sistema EquipeChat através do canal VemFazer no youtube, posteriormente melhoradas por Claudemir Todo Bom",
+          "O Chat CRM é derivado indireto do projeto Whaticket com melhorias compartilhadas pelos desenvolvedores do sistema EquipeChat através do canal VemFazer no youtube, posteriormente melhoradas por Claudemir Todo Bom",
         aboutauthorsite: "Site do autor",
         aboutwhaticketsite: "Site do Whaticket Community no Github",
         aboutvemfazersite: "Site do canal Vem Fazer no Github",
         licenseheading: "Licença em Código Aberto",
         licensedetail:
-          "O ticketz está licenciado sob a GNU Affero General Public License versão 3, isso significa que qualquer usuário que tiver acesso a esta aplicação tem o direito de obter acesso ao código fonte. Mais informações nos links abaixo:",
+          "O Chat CRM está licenciado sob a GNU Affero General Public License versão 3, isso significa que qualquer usuário que tiver acesso a esta aplicação tem o direito de obter acesso ao código fonte. Mais informações nos links abaixo:",
         licensefulltext: "Texto completo da licença",
-        licensesourcecode: "Código fonte do ticketz"
+        licensesourcecode: "Código fonte do Chat CRM"
       },
       schedules: {
         title: "Agendamentos",
@@ -1240,7 +1240,7 @@ const messages = {
         instructions:
           "Acessando o endereço abaixo você pode criar uma conta com 50 ligações gratuitas para teste",
         coupon:
-          "Ao contratar o serviço use o cupom TICKETZ para ganhar um desconto!"
+          "Ao contratar o serviço use o cupom Chat CRM para ganhar um desconto!"
       },
       openHours: {
         title: "Horários de Funcionamento",
@@ -1296,18 +1296,18 @@ const messages = {
           sun: "Domingo"
         }
       },
-      ticketz: {
+      chatCRM: {
         registration: {
-          header: "Cadastre-se na base de usuários do Ticketz",
+          header: "Cadastre-se na base de usuários do Chat CRM",
           description:
-            "Preencha os campos abaixo para se cadastrar na base de usuários do Ticketz e receber novidades sobre o projeto.",
+            "Preencha os campos abaixo para se cadastrar na base de usuários do Chat CRM e receber novidades sobre o projeto.",
           name: "Nome",
           country: "País",
           phoneNumber: "Número de Whatsapp",
           submit: "Cadastrar"
         },
         support: {
-          title: "Apoie o projeto Ticketz Open Source",
+          title: "Apoie o projeto Chat CRM Open Source",
           mercadopagotitle: "Cartão de Crédito",
           recurringbrl: "Doação recorrente em R$",
           paypaltitle: "Cartão de Crédito",
