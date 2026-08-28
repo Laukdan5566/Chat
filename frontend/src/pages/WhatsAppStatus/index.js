@@ -363,13 +363,6 @@ const WhatsAppStatus = () => {
         icon: <CheckCircle color="primary" />
       };
     }
-    if (!readiness.isRegistered) {
-      return {
-        label: "Vinculação incompleta. Atualize a conexão e leia o QR Code novamente.",
-        color: "error",
-        icon: <ErrorOutline color="error" />
-      };
-    }
     if (!readiness.socketReady) {
       return {
         label: "Aguardando a conexão do WhatsApp estabilizar...",

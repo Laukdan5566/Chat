@@ -112,7 +112,9 @@ export const readiness = async (req: Request, res: Response): Promise<Response> 
   try {
     const wbot = getWbot(whatsapp.id);
     isRegistered = Boolean(wbot.isRegistered);
-    socketReady = (wbot.ws as unknown as { readyState?: number })?.readyState === 1;
+    socketReady = Boolean(
+      (wbot.ws as unknown as { isOpen?: boolean })?.isOpen
+    );
     initialSyncComplete = Boolean(wbot.initialSyncComplete);
   } catch (_error) {
     // The connection may still be starting or waiting for QR pairing.
@@ -120,7 +122,6 @@ export const readiness = async (req: Request, res: Response): Promise<Response> 
 
   const ready =
     whatsapp.status === "CONNECTED" &&
-    isRegistered &&
     socketReady &&
     initialSyncComplete &&
     contactsCount > 0;

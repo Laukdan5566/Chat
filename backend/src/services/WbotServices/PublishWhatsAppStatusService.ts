@@ -64,16 +64,8 @@ const PublishWhatsAppStatusService = async ({
   }
 
   const wbot = await GetWhatsappWbot(whatsapp);
-  if (!wbot.isRegistered) {
-    throw new AppError(
-      "A conexão ainda não concluiu a vinculação com o WhatsApp. Atualize a conexão, leia o QR Code novamente e aguarde aparecer como conectada antes de publicar o status.",
-      400
-    );
-  }
-
-  const socketState = (wbot.ws as unknown as { readyState?: number })
-    ?.readyState;
-  if (socketState !== 1) {
+  const socketOpen = (wbot.ws as unknown as { isOpen?: boolean })?.isOpen;
+  if (!socketOpen) {
     throw new AppError(
       "A conexão do WhatsApp ainda está sendo estabilizada. Aguarde alguns segundos e tente publicar novamente.",
       400
