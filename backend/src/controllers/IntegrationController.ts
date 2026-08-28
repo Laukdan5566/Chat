@@ -1,4 +1,6 @@
 import { Request, Response } from "express";
+import { Op } from "sequelize";
+import Message from "../models/Message";
 import Queue from "../models/Queue";
 import Ticket from "../models/Ticket";
 import User from "../models/User";
@@ -85,7 +87,78 @@ export const webhook = async (
   res: Response
 ): Promise<Response> => {
   const { action } = req.body;
+
+  // The VIB SaaS panel uses these read-only actions to list and open a
+  // Ticketz conversation before it sends an order or a customer link.
+  if (action === "search_tickets") {
+    const status = String(req.body.status || "all").trim();
+    const query = String(req.body.q || "").trim();
+    const digits = query.replace(/\D/g, "");
+    const where: any = {
+      companyId: req.companyId
+    };
+
+    if (status && status !== "all") {
+      where.status = status;
+    }
+
+    if (query) {
+      const filters: any[] = [
+        { "$contact.name$": { [Op.iLike]: `%${query}%` } }
+      ];
+
+      if (digits) {
+        filters.push({ "$contact.number$": { [Op.iLike]: `%${digits}%` } });
+      }
+
+      if (/^\d+$/.test(query)) {
+        filters.push({ id: Number(query) });
+      }
+
+      where[Op.or] = filters;
+    }
+
+    const tickets = await Ticket.findAll({
+      where,
+      include: ["contact", "queue", "user", "whatsapp"],
+      order: [["updatedAt", "DESC"]],
+      limit: 100,
+      subQuery: false
+    });
+
+    return res.json({ tickets });
+  }
+
   const ticket = await getTicket(req);
+
+  if (action === "ticket_snapshot") {
+    const requestedLimit = Number(req.body.limit || 80);
+    const limit = Number.isFinite(requestedLimit)
+      ? Math.min(Math.max(Math.trunc(requestedLimit), 1), 500)
+      : 80;
+    const messages = await Message.findAll({
+      where: {
+        ticketId: ticket.id,
+        companyId: req.companyId
+      },
+      order: [["createdAt", "ASC"]],
+      limit
+    });
+
+    return res.json({
+      ticket,
+      contact: ticket.contact,
+      messages: messages.map(message => ({
+        id: message.id,
+        fromMe: message.fromMe,
+        type: message.mediaType || "text",
+        content: message.body || "",
+        body: message.body || "",
+        mediaUrl: message.mediaUrl,
+        createdAt: message.createdAt
+      }))
+    });
+  }
 
   if (action === "message") {
     const content = req.body.message?.content || req.body.content || "";
