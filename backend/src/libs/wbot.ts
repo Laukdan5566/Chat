@@ -64,6 +64,7 @@ export type Session = WASocket & {
   myJid?: string;
   myLid?: string;
   isRegistered?: boolean;
+  initialSyncComplete?: boolean;
   cacheMessage?: (msg: proto.IWebMessageInfo) => void;
   isRefreshing?: boolean;
 };
@@ -375,7 +376,13 @@ export const initWASocket = async (
 
         wsocket.ev.on(
           "connection.update",
-          async ({ connection, lastDisconnect, qr, reachoutTimeLock }) => {
+          async ({
+            connection,
+            lastDisconnect,
+            qr,
+            reachoutTimeLock,
+            receivedPendingNotifications
+          }) => {
             if (reachoutTimeLock) {
               handleReachoutTimelock(reachoutTimeLock, { reachoutTimeLock });
             }
@@ -463,6 +470,7 @@ export const initWASocket = async (
             }
 
             if (connection === "open") {
+              wsocket.initialSyncComplete = false;
               wsocket
                 .fetchAccountReachoutTimelock()
                 .then(timelock => {
@@ -571,6 +579,10 @@ export const initWASocket = async (
                 wsocket.isRefreshing = false;
               }
               resolve(wsocket);
+            }
+
+            if (receivedPendingNotifications) {
+              wsocket.initialSyncComplete = true;
             }
 
             if (qr !== undefined) {

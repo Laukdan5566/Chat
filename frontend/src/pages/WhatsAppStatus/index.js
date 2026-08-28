@@ -22,12 +22,15 @@ import {
 import { makeStyles } from "@material-ui/core/styles";
 import {
   Audiotrack,
+  CheckCircle,
   Close,
+  ErrorOutline,
   Image,
   InsertPhoto,
   People,
   Search,
   Send,
+  Sync,
   Videocam
 } from "@material-ui/icons";
 import { toast } from "react-toastify";
@@ -174,6 +177,8 @@ const WhatsAppStatus = () => {
   const [backgroundColor, setBackgroundColor] = useState("#1f2937");
   const [media, setMedia] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [readiness, setReadiness] = useState(null);
+  const [readinessLoading, setReadinessLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
 
@@ -234,6 +239,35 @@ const WhatsAppStatus = () => {
   }, [whatsappId, search]);
 
   useEffect(() => {
+    if (!whatsappId) {
+      setReadiness(null);
+      return undefined;
+    }
+
+    let active = true;
+    const loadReadiness = async () => {
+      setReadinessLoading(true);
+      try {
+        const { data } = await api.get(
+          `/whatsapp-status/${whatsappId}/readiness`
+        );
+        if (active) setReadiness(data);
+      } catch (error) {
+        if (active) setReadiness(null);
+      } finally {
+        if (active) setReadinessLoading(false);
+      }
+    };
+
+    loadReadiness();
+    const interval = setInterval(loadReadiness, 5000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [whatsappId]);
+
+  useEffect(() => {
     if (!media) {
       setPreviewUrl(null);
       return undefined;
@@ -253,6 +287,7 @@ const WhatsAppStatus = () => {
 
   const handleConnectionChange = event => {
     setWhatsappId(event.target.value);
+    setReadiness(null);
     setSelectedContacts([]);
     setSearch("");
   };
@@ -306,6 +341,55 @@ const WhatsAppStatus = () => {
   };
 
   const previewHasMedia = Boolean(previewUrl && media);
+  const statusReadiness = useMemo(() => {
+    if (!whatsappId) {
+      return {
+        label: "Selecione uma conexão para verificar a sincronização.",
+        color: "textSecondary",
+        icon: <Sync color="disabled" />
+      };
+    }
+    if (!readiness) {
+      return {
+        label: "Verificando o estado da conexão...",
+        color: "textSecondary",
+        icon: <CircularProgress size={18} />
+      };
+    }
+    if (readiness.ready) {
+      return {
+        label: `Pronto para publicar. ${readiness.contactsCount} contatos sincronizados.`,
+        color: "primary",
+        icon: <CheckCircle color="primary" />
+      };
+    }
+    if (!readiness.isRegistered) {
+      return {
+        label: "Vinculação incompleta. Atualize a conexão e leia o QR Code novamente.",
+        color: "error",
+        icon: <ErrorOutline color="error" />
+      };
+    }
+    if (!readiness.socketReady) {
+      return {
+        label: "Aguardando a conexão do WhatsApp estabilizar...",
+        color: "textSecondary",
+        icon: <Sync color="action" />
+      };
+    }
+    if (!readiness.initialSyncComplete || !readiness.contactsCount) {
+      return {
+        label: `Sincronizando contatos do WhatsApp${readiness.contactsCount ? ` (${readiness.contactsCount} encontrados)` : ""}...`,
+        color: "textSecondary",
+        icon: <Sync color="action" />
+      };
+    }
+    return {
+      label: "A conexão ainda não está pronta para publicar.",
+      color: "error",
+      icon: <ErrorOutline color="error" />
+    };
+  }, [whatsappId, readiness]);
 
   return (
     <MainContainer>
@@ -402,6 +486,30 @@ const WhatsAppStatus = () => {
                           value={backgroundColor}
                           onChange={event => setBackgroundColor(event.target.value)}
                         />
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Box
+                        display="flex"
+                        alignItems="center"
+                        gridGap={8}
+                        border={1}
+                        borderColor="divider"
+                        borderRadius={6}
+                        px={1.5}
+                        py={1}
+                      >
+                        {readinessLoading && !readiness ? <CircularProgress size={18} /> : statusReadiness.icon}
+                        <div>
+                          <Typography variant="body2" color={statusReadiness.color}>
+                            {statusReadiness.label}
+                          </Typography>
+                          {readiness?.lastContactSyncAt && (
+                            <Typography variant="caption" color="textSecondary">
+                              Última atualização de contatos: {format(parseISO(readiness.lastContactSyncAt), "dd/MM/yyyy HH:mm")}
+                            </Typography>
+                          )}
+                        </div>
                       </Box>
                     </Grid>
                     <Grid item xs={12}>
@@ -511,7 +619,7 @@ const WhatsAppStatus = () => {
                           variant="contained"
                           size="large"
                           startIcon={publishing ? <CircularProgress color="inherit" size={18} /> : <Send />}
-                          disabled={publishing}
+                          disabled={publishing || !readiness?.ready}
                           onClick={handlePublish}
                         >
                           Publicar status

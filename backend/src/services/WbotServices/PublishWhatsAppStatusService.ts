@@ -80,6 +80,13 @@ const PublishWhatsAppStatusService = async ({
     );
   }
 
+  if (!wbot.initialSyncComplete) {
+    throw new AppError(
+      "A conexão ainda está sincronizando os dados iniciais do WhatsApp. Aguarde o status ficar pronto para publicar.",
+      400
+    );
+  }
+
   let mediaUrl: string | null = null;
   let mediaOptions: AnyMessageContent | null = null;
 

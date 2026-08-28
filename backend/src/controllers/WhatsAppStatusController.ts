@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import AppError from "../errors/AppError";
 import BaileysContact from "../models/BaileysContact";
+import { getWbot } from "../libs/wbot";
 import User from "../models/User";
 import Whatsapp from "../models/Whatsapp";
 import WhatsAppStatusPost from "../models/WhatsAppStatusPost";
@@ -79,6 +80,60 @@ export const contacts = async (req: Request, res: Response): Promise<Response> =
     .slice(0, 250);
 
   return res.json({ contacts, total: records.length });
+};
+
+export const readiness = async (req: Request, res: Response): Promise<Response> => {
+  const whatsapp = await Whatsapp.findOne({
+    where: {
+      id: Number(req.params.whatsappId),
+      companyId: req.user.companyId,
+      channel: "whatsapp"
+    },
+    attributes: ["id", "status"]
+  });
+
+  if (!whatsapp) {
+    throw new AppError("A conexão escolhida não foi encontrada.", 404);
+  }
+
+  const [contactsCount, lastContact] = await Promise.all([
+    BaileysContact.count({ where: { whatsappId: whatsapp.id } }),
+    BaileysContact.findOne({
+      where: { whatsappId: whatsapp.id },
+      attributes: ["updatedAt"],
+      order: [["updatedAt", "DESC"]]
+    })
+  ]);
+
+  let isRegistered = false;
+  let socketReady = false;
+  let initialSyncComplete = false;
+
+  try {
+    const wbot = getWbot(whatsapp.id);
+    isRegistered = Boolean(wbot.isRegistered);
+    socketReady = (wbot.ws as unknown as { readyState?: number })?.readyState === 1;
+    initialSyncComplete = Boolean(wbot.initialSyncComplete);
+  } catch (_error) {
+    // The connection may still be starting or waiting for QR pairing.
+  }
+
+  const ready =
+    whatsapp.status === "CONNECTED" &&
+    isRegistered &&
+    socketReady &&
+    initialSyncComplete &&
+    contactsCount > 0;
+
+  return res.json({
+    ready,
+    connectionStatus: whatsapp.status,
+    isRegistered,
+    socketReady,
+    initialSyncComplete,
+    contactsCount,
+    lastContactSyncAt: lastContact?.updatedAt || null
+  });
 };
 
 export const publish = async (req: Request, res: Response): Promise<Response> => {

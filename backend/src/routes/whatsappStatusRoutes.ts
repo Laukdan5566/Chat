@@ -16,6 +16,12 @@ whatsappStatusRoutes.get(
   WhatsAppStatusController.connections
 );
 whatsappStatusRoutes.get(
+  "/whatsapp-status/:whatsappId/readiness",
+  isAuth,
+  canManageStatus,
+  WhatsAppStatusController.readiness
+);
+whatsappStatusRoutes.get(
   "/whatsapp-status/:whatsappId/contacts",
   isAuth,
   canManageStatus,
