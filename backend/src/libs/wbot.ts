@@ -63,6 +63,7 @@ export type Session = WASocket & {
   id?: number;
   myJid?: string;
   myLid?: string;
+  isRegistered?: boolean;
   cacheMessage?: (msg: proto.IWebMessageInfo) => void;
   isRefreshing?: boolean;
 };
@@ -352,6 +353,8 @@ export const initWASocket = async (
           transactionOpts: { maxCommitRetries: 1, delayBetweenTriesMs: 10 }
         });
 
+        wsocket.isRegistered = state.creds.registered;
+
         wsocket.ev.on("call", async event => {
           logger.trace({ event }, "Received call event");
         });
@@ -614,7 +617,10 @@ export const initWASocket = async (
             }
           }
         );
-        wsocket.ev.on("creds.update", saveState);
+        wsocket.ev.on("creds.update", async () => {
+          wsocket.isRegistered = state.creds.registered;
+          await saveState();
+        });
 
         wsocket.ev.on("pair.passkey.request", async () => {
           logger.info(`Session ${name} requires passkey authentication`);
