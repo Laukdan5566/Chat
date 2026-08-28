@@ -7,6 +7,7 @@ import BaileysContact from "../../models/BaileysContact";
 import Whatsapp from "../../models/Whatsapp";
 import WhatsAppStatusPost from "../../models/WhatsAppStatusPost";
 import { getMessageFileOptions } from "./SendWhatsAppMedia";
+import { logger } from "../../utils/logger";
 
 const STATUS_JID = "status@broadcast";
 
@@ -122,6 +123,17 @@ const PublishWhatsAppStatusService = async ({
         backgroundColor: backgroundColor || "#1F2937",
         font: 1
       }
+    );
+
+    // The connector only acknowledges the socket request here. WhatsApp does not
+    // expose a delivery receipt that proves the Status became visible on a phone.
+    logger.info(
+      {
+        whatsappId: whatsapp.id,
+        messageId: message?.key?.id,
+        recipientsCount: recipients.length
+      },
+      "WhatsApp Status request accepted by connector"
     );
 
     return WhatsAppStatusPost.create({

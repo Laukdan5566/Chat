@@ -328,7 +328,9 @@ const WhatsAppStatus = () => {
     setPublishing(true);
     try {
       await api.post("/whatsapp-status", formData);
-      toast.success("Status publicado no WhatsApp.");
+      toast.info(
+        "Solicitação encaminhada ao WhatsApp. Confirme a publicação no aparelho antes de comunicar os contatos."
+      );
       setBody("");
       setMedia(null);
       setSelectedContacts([]);
@@ -625,9 +627,9 @@ const WhatsAppStatus = () => {
             </Grid>
 
             <Paper className={classes.history} variant="outlined">
-              <Typography variant="subtitle1">Publicações recentes</Typography>
+              <Typography variant="subtitle1">Solicitações recentes</Typography>
               {!history.length ? (
-                <Typography variant="body2" color="textSecondary">Nenhum status publicado por esta empresa ainda.</Typography>
+                <Typography variant="body2" color="textSecondary">Nenhuma solicitação de Status por esta empresa ainda.</Typography>
               ) : history.map((post, index) => (
                 <React.Fragment key={post.id}>
                   {index > 0 && <Divider />}
