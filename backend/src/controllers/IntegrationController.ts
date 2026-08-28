@@ -4,10 +4,17 @@ import Message from "../models/Message";
 import Queue from "../models/Queue";
 import Ticket from "../models/Ticket";
 import User from "../models/User";
+import Whatsapp from "../models/Whatsapp";
 import AppError from "../errors/AppError";
 import SendWhatsAppMessage from "../services/WbotServices/SendWhatsAppMessage";
+import {
+  getMessageFileOptions,
+  sendWhatsappFile
+} from "../services/WbotServices/SendWhatsAppMedia";
 import UpdateTicketService from "../services/TicketServices/UpdateTicketService";
+import FindOrCreateTicketService from "../services/TicketServices/FindOrCreateTicketService";
 import CreateTicketNoteService from "../services/TicketNoteService/CreateTicketNoteService";
+import CreateOrUpdateContactService from "../services/ContactServices/CreateOrUpdateContactService";
 import { getN8nTicketContext } from "../services/N8nServices/RunN8nWebhookService";
 import { createWebChatOutboundMessage } from "../services/WebChatServices/WebChatAutomationService";
 
@@ -129,6 +136,73 @@ export const webhook = async (
     return res.json({ tickets });
   }
 
+  if (action === "message_to_number") {
+    const number = String(req.body.number || "").replace(/\D/g, "");
+    const content = req.body.message?.content || req.body.content || "";
+    const requestedQueueId = Number(req.body.queueId || req.body.queue_id);
+    const requestedWhatsappId = Number(
+      req.body.whatsappId || req.body.whatsapp_id || req.body.ticketzWhatsappId
+    );
+
+    if (!number) {
+      throw new AppError("ERR_CONTACT_NUMBER_NOT_FOUND", 400);
+    }
+    if (!content.trim()) {
+      throw new AppError("ERR_EMPTY_MESSAGE", 400);
+    }
+
+    const whatsapp = requestedWhatsappId
+      ? await Whatsapp.findOne({
+          where: {
+            id: requestedWhatsappId,
+            companyId: req.companyId,
+            channel: "whatsapp",
+            status: "CONNECTED"
+          }
+        })
+      : await Whatsapp.findOne({
+          where: {
+            companyId: req.companyId,
+            channel: "whatsapp",
+            status: "CONNECTED"
+          },
+          order: [["isDefault", "DESC"], ["id", "ASC"]]
+        });
+
+    if (!whatsapp) {
+      throw new AppError("ERR_NO_DEF_WAPP_FOUND", 400);
+    }
+
+    const queue = requestedQueueId
+      ? await Queue.findOne({
+          where: { id: requestedQueueId, companyId: req.companyId }
+        })
+      : null;
+    if (requestedQueueId && !queue) {
+      throw new AppError("ERR_QUEUE_NOT_FOUND", 400);
+    }
+
+    const contact = await CreateOrUpdateContactService({
+      name: String(req.body.contactName || req.body.name || number),
+      number,
+      companyId: req.companyId,
+      channel: "whatsapp"
+    });
+    const { ticket } = await FindOrCreateTicketService(
+      contact,
+      whatsapp.id,
+      req.companyId,
+      { queue: queue || undefined }
+    );
+    const sentMessage = await SendWhatsAppMessage({ body: content, ticket });
+
+    return res.json({
+      ok: true,
+      ticketId: ticket.id,
+      messageId: sentMessage?.key?.id || null
+    });
+  }
+
   const ticket = await getTicket(req);
 
   if (action === "ticket_snapshot") {
@@ -158,6 +232,38 @@ export const webhook = async (
         createdAt: message.createdAt
       }))
     });
+  }
+
+  if (action === "set_bot") {
+    const enabled = Boolean(req.body.enabled);
+    await ticket.contact.update({ disableBot: !enabled });
+    return res.json({ ok: true, enabled, disableBot: !enabled });
+  }
+
+  if (action === "media") {
+    if (ticket.channel === "webchat") {
+      throw new AppError("ERR_MEDIA_NOT_SUPPORTED_FOR_WEBCHAT", 400);
+    }
+
+    const mediaUrl = String(req.body.mediaUrl || req.body.message?.mediaUrl || "").trim();
+    const fileName = String(req.body.fileName || req.body.message?.fileName || "arquivo");
+    const mimetype = String(req.body.mimeType || req.body.message?.mimeType || "application/octet-stream");
+    const caption = String(req.body.content || req.body.message?.content || "");
+    if (!mediaUrl) {
+      throw new AppError("ERR_MEDIA_URL_REQUIRED", 400);
+    }
+
+    const fileOptions = await getMessageFileOptions(fileName, mediaUrl, mimetype);
+    if (!fileOptions) {
+      throw new AppError("ERR_MEDIA_OPTIONS", 400);
+    }
+
+    const sentMessage = await sendWhatsappFile(
+      ticket,
+      { mediaUrl, mimetype, filename: fileName },
+      { caption: caption || undefined, fileName, ...fileOptions }
+    );
+    return res.json({ ok: true, messageId: sentMessage?.key?.id || null });
   }
 
   if (action === "message") {
