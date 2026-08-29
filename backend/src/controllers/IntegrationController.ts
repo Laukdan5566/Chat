@@ -11,6 +11,9 @@ import {
   getMessageFileOptions,
   sendWhatsappFile
 } from "../services/WbotServices/SendWhatsAppMedia";
+import GetDefaultWhatsApp from "../helpers/GetDefaultWhatsApp";
+import { getWbot, removeWbot } from "../libs/wbot";
+import { StartWhatsAppSession } from "../services/WbotServices/StartWhatsAppSession";
 import UpdateTicketService from "../services/TicketServices/UpdateTicketService";
 import FindOrCreateTicketService from "../services/TicketServices/FindOrCreateTicketService";
 import CreateTicketNoteService from "../services/TicketNoteService/CreateTicketNoteService";
@@ -69,6 +72,39 @@ const getTicket = async (req: Request) => {
   return ticket;
 };
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const serializeWhatsapp = (whatsapp: Whatsapp) => ({
+  id: whatsapp.id,
+  name: whatsapp.name,
+  status: whatsapp.status,
+  qrcode: whatsapp.qrcode || "",
+  battery: whatsapp.battery,
+  plugged: whatsapp.plugged,
+  retries: whatsapp.retries,
+  provider: whatsapp.provider,
+  channel: whatsapp.channel,
+  isDefault: whatsapp.isDefault,
+  updatedAt: whatsapp.updatedAt
+});
+
+const getIntegrationWhatsapp = async (req: Request) => {
+  const rawId =
+    req.body.whatsappId ||
+    req.body.whatsapp_id ||
+    req.body.ticketzWhatsappId ||
+    req.body.ticketz_whatsapp_id;
+  const whatsapp = rawId
+    ? await Whatsapp.findByPk(Number(rawId))
+    : await GetDefaultWhatsApp(req.companyId);
+
+  if (!whatsapp || whatsapp.companyId !== req.companyId) {
+    throw new AppError("ERR_NO_WAPP_FOUND", 404);
+  }
+
+  return whatsapp;
+};
+
 export const listQueues = async (
   req: Request,
   res: Response
@@ -94,6 +130,59 @@ export const webhook = async (
   res: Response
 ): Promise<Response> => {
   const { action } = req.body;
+
+  if (action === "whatsapp_status") {
+    const whatsapp = await getIntegrationWhatsapp(req);
+    await whatsapp.reload();
+    return res.json({ ok: true, whatsapp: serializeWhatsapp(whatsapp) });
+  }
+
+  if (action === "start_whatsapp_session") {
+    const whatsapp = await getIntegrationWhatsapp(req);
+    if (whatsapp.channel !== "whatsapp") {
+      throw new AppError("ERR_SESSION_NOT_SUPPORTED", 400);
+    }
+
+    if (String(whatsapp.status).toUpperCase() !== "CONNECTED") {
+      await StartWhatsAppSession(whatsapp, req.companyId);
+      await sleep(1500);
+    }
+
+    await whatsapp.reload();
+    return res.json({ ok: true, whatsapp: serializeWhatsapp(whatsapp) });
+  }
+
+  if (action === "refresh_whatsapp_session") {
+    const whatsapp = await getIntegrationWhatsapp(req);
+    if (whatsapp.channel !== "whatsapp") {
+      throw new AppError("ERR_SESSION_NOT_SUPPORTED", 400);
+    }
+
+    try {
+      const wbot = getWbot(whatsapp.id);
+      await wbot.ws.close();
+    } catch {
+      await StartWhatsAppSession(whatsapp, req.companyId, true);
+    }
+    await sleep(1500);
+    await whatsapp.reload();
+    return res.json({ ok: true, whatsapp: serializeWhatsapp(whatsapp) });
+  }
+
+  if (action === "disconnect_whatsapp_session") {
+    const whatsapp = await getIntegrationWhatsapp(req);
+    if (whatsapp.channel === "whatsapp") {
+      await removeWbot(whatsapp.id).catch(() => undefined);
+    }
+    await whatsapp.update({
+      status: "DISCONNECTED",
+      session: "",
+      qrcode: "",
+      battery: null,
+      plugged: null
+    });
+    return res.json({ ok: true, whatsapp: serializeWhatsapp(whatsapp) });
+  }
 
   // The VIB SaaS panel uses these read-only actions to list and open a
   // Ticketz conversation before it sends an order or a customer link.
