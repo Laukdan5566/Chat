@@ -1,4 +1,5 @@
 import * as Yup from "yup";
+import { randomUUID } from "crypto";
 
 import AppError from "../../errors/AppError";
 import Whatsapp from "../../models/Whatsapp";
@@ -26,6 +27,9 @@ interface Request {
   channel?: string;
   facebookPageUserId?: string;
   language?: string;
+  apiToken?: string;
+  apiChannelId?: string;
+  apiWebhookSecret?: string;
 }
 
 interface Response {
@@ -51,7 +55,10 @@ const CreateWhatsAppService = async ({
   facebookPageUserId,
   tokenMeta,
   channel = "whatsapp",
-  language
+  language,
+  apiToken,
+  apiChannelId,
+  apiWebhookSecret
 }: Request): Promise<Response> => {
   const company = await Company.findOne({
     where: {
@@ -101,6 +108,16 @@ const CreateWhatsAppService = async ({
     await schema.validate({ name, status, isDefault });
   } catch (err: unknown) {
     throw new AppError((err as Error).message);
+  }
+
+  if (provider === "notificame") {
+    if (channel !== "whatsapp") {
+      throw new AppError("ERR_OFFICIAL_WHATSAPP_INVALID_CHANNEL", 400);
+    }
+
+    if (!apiToken?.trim() || !apiChannelId?.trim()) {
+      throw new AppError("ERR_OFFICIAL_WHATSAPP_CREDENTIALS_REQUIRED", 400);
+    }
   }
 
   const whatsappFound = await Whatsapp.findOne({ where: { companyId } });
@@ -165,7 +182,13 @@ const CreateWhatsAppService = async ({
       facebookUserToken,
       facebookPageUserId,
       tokenMeta,
-      language
+      language,
+      apiToken: apiToken?.trim() || null,
+      apiChannelId: apiChannelId?.trim() || null,
+      apiWebhookSecret:
+        provider === "notificame"
+          ? apiWebhookSecret?.trim() || randomUUID().replace(/-/g, "")
+          : null
     },
     { include: ["queues"] }
   );

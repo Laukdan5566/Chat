@@ -90,6 +90,9 @@ const WhatsAppModal = ({ open, onClose, whatsAppId }) => {
     facebookUserToken: "",
     tokenMeta: "",
     provider: "beta",
+    apiToken: "",
+    apiChannelId: "",
+    apiWebhookSecret: "",
     language: localStorage.getItem("language") || ""
   };
   const [whatsApp, setWhatsApp] = useState(initialState);
@@ -233,6 +236,70 @@ const WhatsAppModal = ({ open, onClose, whatsAppId }) => {
                     </Typography>
                   )}
                 </div>
+                {values.channel === "whatsapp" && (
+                  <>
+                    <div>
+                      <Field
+                        as={TextField}
+                        select
+                        label="Tipo de conexão"
+                        name="provider"
+                        fullWidth
+                        variant="outlined"
+                        margin="dense"
+                        disabled={Boolean(whatsAppId)}
+                      >
+                        <MenuItem value="beta">WhatsApp via QR Code</MenuItem>
+                        <MenuItem value="notificame">
+                          WhatsApp API Oficial
+                        </MenuItem>
+                      </Field>
+                    </div>
+                    {values.provider === "notificame" && (
+                      <>
+                        <Typography variant="caption" color="textSecondary">
+                          Conexão oficial via NotificaMe. Não usa QR Code nem sessão no celular.
+                        </Typography>
+                        <div>
+                          <Field
+                            as={TextField}
+                            label="Token da conta NotificaMe"
+                            name="apiToken"
+                            type="password"
+                            fullWidth
+                            variant="outlined"
+                            margin="dense"
+                            helperText="Token da conta, enviado no cabeçalho X-Api-Token."
+                          />
+                        </div>
+                        <div>
+                          <Field
+                            as={TextField}
+                            label="ID do canal WhatsApp"
+                            name="apiChannelId"
+                            fullWidth
+                            variant="outlined"
+                            margin="dense"
+                            helperText="Identificador do canal fornecido pela NotificaMe."
+                          />
+                        </div>
+                        {values.apiWebhookSecret && (
+                          <div>
+                            <TextField
+                              label="URL do webhook"
+                              value={`${window.location.origin}/api/official-whatsapp/notificame/${values.apiWebhookSecret}`}
+                              fullWidth
+                              variant="outlined"
+                              margin="dense"
+                              InputProps={{ readOnly: true }}
+                              helperText="Cadastre esta URL no webhook do canal NotificaMe."
+                            />
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
                 {(values.channel === "facebook" ||
                   values.channel === "instagram") && (
                   <>
@@ -395,7 +462,7 @@ const WhatsAppModal = ({ open, onClose, whatsAppId }) => {
                     margin="dense"
                   />
                 </div>
-                {values.channel === "whatsapp" && (
+                {values.channel === "whatsapp" && values.provider !== "notificame" && (
                   <div>
                     <Field
                       as={TextField}

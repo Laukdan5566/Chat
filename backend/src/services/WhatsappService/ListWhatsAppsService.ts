@@ -14,6 +14,7 @@ const ListWhatsAppsService = async ({
       "id",
       "name",
       "channel",
+      "provider",
       "status",
       "qrcode",
       "isDefault",

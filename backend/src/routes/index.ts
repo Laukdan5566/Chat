@@ -39,6 +39,7 @@ import pushTokenRoutes from "./pushTokenRoutes";
 import webChatRoutes from "./webChatRoutes";
 import salesRoutingRoutes from "./salesRoutingRoutes";
 import whatsappStatusRoutes from "./whatsappStatusRoutes";
+import officialWhatsappRoutes from "./officialWhatsappRoutes";
 
 const routes = Router();
 
@@ -82,5 +83,6 @@ routes.use(pushTokenRoutes);
 routes.use(webChatRoutes);
 routes.use(salesRoutingRoutes);
 routes.use(whatsappStatusRoutes);
+routes.use(officialWhatsappRoutes);
 
 export default routes;

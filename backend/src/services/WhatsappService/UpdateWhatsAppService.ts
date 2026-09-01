@@ -25,6 +25,9 @@ export interface WhatsappData {
   facebookUserToken?: string;
   facebookPageUserId?: string;
   tokenMeta?: string;
+  provider?: string;
+  apiToken?: string;
+  apiChannelId?: string;
 }
 
 interface Request {
@@ -65,7 +68,10 @@ const UpdateWhatsAppService = async ({
     facebookUserId,
     facebookUserToken,
     facebookPageUserId,
-    tokenMeta
+    tokenMeta,
+    provider,
+    apiToken,
+    apiChannelId
   } = whatsappData;
 
   try {
@@ -99,6 +105,16 @@ const UpdateWhatsAppService = async ({
     throw new AppError("ERR_WAPP_NOT_FOUND", 404);
   }
 
+  if (provider && provider !== whatsapp.provider) {
+    throw new AppError("ERR_WHATSAPP_PROVIDER_CANNOT_CHANGE", 400);
+  }
+
+  if (whatsapp.provider === "notificame") {
+    if (!(apiToken || whatsapp.apiToken) || !(apiChannelId || whatsapp.apiChannelId)) {
+      throw new AppError("ERR_OFFICIAL_WHATSAPP_CREDENTIALS_REQUIRED", 400);
+    }
+  }
+
   await assertCompanyCanUseChannel(companyId, whatsapp.channel);
 
   await whatsapp.update({
@@ -116,6 +132,8 @@ const UpdateWhatsAppService = async ({
     facebookUserToken,
     facebookPageUserId,
     tokenMeta,
+    apiToken: apiToken?.trim() || whatsapp.apiToken,
+    apiChannelId: apiChannelId?.trim() || whatsapp.apiChannelId,
     transferMessage,
     language
   });

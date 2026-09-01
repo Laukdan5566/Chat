@@ -14,6 +14,10 @@ import DeleteWhatsAppMessage from "../services/WbotServices/DeleteWhatsAppMessag
 import SendWhatsAppMedia from "../services/WbotServices/SendWhatsAppMedia";
 import SendWhatsAppMessage from "../services/WbotServices/SendWhatsAppMessage";
 import SendMetaMessageService from "../services/MetaServices/SendMetaMessageService";
+import SendNotificaMeMessageService, {
+  isNotificaMeConnection
+} from "../services/OfficialWhatsAppServices/SendNotificaMeMessageService";
+import SendNotificaMeMediaService from "../services/OfficialWhatsAppServices/SendNotificaMeMediaService";
 import CheckContactNumber from "../services/WbotServices/CheckNumber";
 import EditWhatsAppMessage from "../services/WbotServices/EditWhatsAppMessage";
 import ListContactMessagesService from "../services/MessageServices/ListContactMessagesService";
@@ -174,6 +178,38 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   }
 
   const { channel } = ticket;
+
+  const connection =
+    channel === "whatsapp" ? await Whatsapp.findByPk(ticket.whatsappId) : null;
+
+  if (isNotificaMeConnection(connection)) {
+    if (medias?.length) {
+      for (const media of medias) {
+        try {
+          const mediaCaption =
+            typeof body === "string" && body.trim() && body !== media.originalname
+              ? body
+              : undefined;
+          await SendNotificaMeMediaService({
+            media,
+            ticket,
+            caption: mediaCaption,
+            userId
+          });
+        } finally {
+          try {
+            fs.unlinkSync(media.path);
+          } catch (error) {
+            if (error.code !== "ENOENT") throw error;
+          }
+        }
+      }
+    } else {
+      await SendNotificaMeMessageService({ body, ticket, userId });
+    }
+
+    return res.send();
+  }
 
   if (channel === "webchat") {
     const messageBody = typeof body === "string" ? body.trim() : "";

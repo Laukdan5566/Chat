@@ -32,6 +32,10 @@ interface WhatsappData {
   facebookUserToken?: string;
   facebookPageUserId?: string;
   tokenMeta?: string;
+  provider?: string;
+  apiToken?: string;
+  apiChannelId?: string;
+  apiWebhookSecret?: string;
 }
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
@@ -57,6 +61,7 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
         id: whatsapp.id,
         name: whatsapp.name,
         channel: whatsapp.channel,
+        provider: whatsapp.provider,
         status: whatsapp.status,
         isDefault: whatsapp.isDefault,
         queues: whatsapp.queues
@@ -83,15 +88,24 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     facebookUserId,
     facebookUserToken,
     facebookPageUserId,
-    tokenMeta
+    tokenMeta,
+    provider,
+    apiToken,
+    apiChannelId,
+    apiWebhookSecret
   }: WhatsappData = req.body;
   const { companyId } = req.user;
   const normalizedChannel = channel || "whatsapp";
+  const normalizedProvider = provider || "beta";
+  const isOfficialWhatsApp =
+    normalizedChannel === "whatsapp" && normalizedProvider === "notificame";
 
   const { whatsapp, oldDefaultWhatsapp } = await CreateWhatsAppService({
     name,
     status:
-      normalizedChannel === "facebook" || normalizedChannel === "instagram"
+      isOfficialWhatsApp ||
+      normalizedChannel === "facebook" ||
+      normalizedChannel === "instagram"
         ? "CONNECTED"
         : status,
     isDefault,
@@ -107,7 +121,11 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     facebookUserId,
     facebookUserToken,
     facebookPageUserId,
-    tokenMeta
+    tokenMeta,
+    provider: normalizedProvider,
+    apiToken,
+    apiChannelId,
+    apiWebhookSecret
   });
 
   sendWhatsappUpdate(whatsapp);
@@ -116,7 +134,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     sendWhatsappUpdate(oldDefaultWhatsapp);
   }
 
-  if (whatsapp.channel === "whatsapp") {
+  if (whatsapp.channel === "whatsapp" && whatsapp.provider !== "notificame") {
     StartWhatsAppSession(whatsapp, companyId);
   }
 
@@ -222,7 +240,7 @@ export const remove = async (
     }
   }
 
-  if (whatsapp.channel === "whatsapp") {
+  if (whatsapp.channel === "whatsapp" && whatsapp.provider !== "notificame") {
     await DeleteBaileysService(whatsappId);
     await cacheLayer.delFromPattern(`sessions:${whatsappId}:*`);
     removeWbot(+whatsappId);

@@ -28,6 +28,10 @@ const store = async (req: Request, res: Response): Promise<Response> => {
     throw new AppError("ERR_NO_WAPP_FOUND", 404);
   }
 
+  if (whatsapp.provider === "notificame") {
+    throw new AppError("ERR_OFFICIAL_WHATSAPP_HAS_NO_QRCODE", 400);
+  }
+
   await StartWhatsAppSession(whatsapp, companyId);
 
   return res.status(200).json({ message: "Starting session." });
@@ -43,7 +47,7 @@ const update = async (req: Request, res: Response): Promise<Response> => {
     whatsappData: { session: "" }
   });
 
-  if (whatsapp.channel === "whatsapp") {
+  if (whatsapp.channel === "whatsapp" && whatsapp.provider !== "notificame") {
     await StartWhatsAppSession(whatsapp, companyId);
   }
 
@@ -64,7 +68,7 @@ const remove = async (req: Request, res: Response): Promise<Response> => {
     throw new AppError("ERR_NO_WAPP_FOUND", 404);
   }
 
-  if (whatsapp.channel === "whatsapp") {
+  if (whatsapp.channel === "whatsapp" && whatsapp.provider !== "notificame") {
     const wbot = getWbot(whatsapp.id);
     wbot.logout();
     wbot.ws.close();
@@ -91,7 +95,7 @@ const refresh = async (req: Request, res: Response): Promise<Response> => {
     throw new AppError("ERR_NO_WAPP_FOUND", 404);
   }
 
-  if (whatsapp.channel === "whatsapp") {
+  if (whatsapp.channel === "whatsapp" && whatsapp.provider !== "notificame") {
     const wbot = getWbot(whatsapp.id);
     if (!wbot) {
       return res.status(404).json({ message: "Session not found." });

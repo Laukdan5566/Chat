@@ -115,13 +115,23 @@ app.get("/public/*", (req, res) => {
 
 app.use((req, _res, next) => {
   const { method, url, query, body, headers } = req;
+  const safeBody =
+    body && typeof body === "object"
+      ? {
+          ...body,
+          apiToken: body.apiToken ? "[REDACTED]" : undefined,
+          token: body.token ? "[REDACTED]" : undefined,
+          tokenMeta: body.tokenMeta ? "[REDACTED]" : undefined,
+          facebookUserToken: body.facebookUserToken ? "[REDACTED]" : undefined
+        }
+      : body;
   const safeHeaders = {
     ...headers,
     authorization: headers.authorization ? "[REDACTED]" : undefined,
     cookie: headers.cookie ? "[REDACTED]" : undefined
   };
   logger.trace(
-    { method, url, query, body, headers: safeHeaders },
+    { method, url, query, body: safeBody, headers: safeHeaders },
     `Incoming request: ${req.method} ${req.url}`
   );
   next();

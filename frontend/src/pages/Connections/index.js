@@ -292,6 +292,14 @@ const Connections = () => {
   };
 
   const renderActionButtons = whatsApp => {
+    if (whatsApp.provider === "notificame") {
+      return (
+        <Typography variant="caption" color="textSecondary">
+          API Oficial
+        </Typography>
+      );
+    }
+
     const canRetrySession = ["DISCONNECTED", "PENDING", "TIMEOUT"].includes(
       whatsApp.status
     );
@@ -378,6 +386,16 @@ const Connections = () => {
   };
 
   const renderStatusToolTips = whatsApp => {
+    if (whatsApp.provider === "notificame") {
+      return (
+        <div className={classes.customTableCell}>
+          <CustomToolTip title="Canal oficial configurado">
+            <SignalCellular4Bar style={{ color: green[500] }} />
+          </CustomToolTip>
+        </div>
+      );
+    }
+
     return (
       <div className={classes.customTableCell}>
         {whatsApp.status === "DISCONNECTED" && (
@@ -483,7 +501,7 @@ const Connections = () => {
               color="primary"
               onClick={handleOpenWhatsAppModal}
             >
-              {i18n.t("connections.buttons.add")}
+              Adicionar conexão
             </Button>
           )}
         </MainHeaderButtonsWrapper>
