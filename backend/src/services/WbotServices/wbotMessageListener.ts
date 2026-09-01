@@ -102,9 +102,25 @@ const ackMutex = new Mutex();
 const groupContactCache = new SimpleObjectCache(1000 * 30, logger);
 const outOfHoursCache = new SimpleObjectCache(1000 * 60 * 5, logger);
 
-const AUTOMATED_REPLY_WINDOW_MS = 1000 * 60 * 5;
-const AUTOMATED_REPLY_LIMIT = 6;
-const AUTOMATED_DUPLICATE_REPLY_LIMIT = 2;
+const DEFAULT_AUTOMATED_REPLY_WINDOW_MINUTES = 5;
+const DEFAULT_AUTOMATED_REPLY_LIMIT = 6;
+const DEFAULT_AUTOMATED_DUPLICATE_REPLY_LIMIT = 2;
+
+const getBoundedCompanyNumberSetting = async (
+  companyId: number,
+  key: string,
+  defaultValue: number,
+  minimum: number,
+  maximum: number
+) => {
+  const value = Number.parseInt(
+    await GetCompanySetting(companyId, key, String(defaultValue)),
+    10
+  );
+
+  if (!Number.isFinite(value)) return defaultValue;
+  return Math.min(Math.max(value, minimum), maximum);
+};
 
 const replaceTextMessageBody = (msg: WAMessage, body: string) => {
   const message: any = msg.message;
@@ -788,7 +804,30 @@ const pauseAutomatedRepliesAfterBurst = async (
   ticket: Ticket,
   body?: string
 ) => {
-  const createdAfter = new Date(Date.now() - AUTOMATED_REPLY_WINDOW_MS);
+  const [windowMinutes, replyLimit, duplicateReplyLimit] = await Promise.all([
+    getBoundedCompanyNumberSetting(
+      ticket.companyId,
+      "automatedReplyWindowMinutes",
+      DEFAULT_AUTOMATED_REPLY_WINDOW_MINUTES,
+      1,
+      60
+    ),
+    getBoundedCompanyNumberSetting(
+      ticket.companyId,
+      "automatedReplyLimit",
+      DEFAULT_AUTOMATED_REPLY_LIMIT,
+      2,
+      50
+    ),
+    getBoundedCompanyNumberSetting(
+      ticket.companyId,
+      "automatedDuplicateReplyLimit",
+      DEFAULT_AUTOMATED_DUPLICATE_REPLY_LIMIT,
+      1,
+      10
+    )
+  ]);
+  const createdAfter = new Date(Date.now() - windowMinutes * 60 * 1000);
   const totalRepliesWhere = {
     ticketId: ticket.id,
     fromMe: true,
@@ -804,8 +843,8 @@ const pauseAutomatedRepliesAfterBurst = async (
   ]);
 
   if (
-    automaticReplies < AUTOMATED_REPLY_LIMIT &&
-    duplicateReplies < AUTOMATED_DUPLICATE_REPLY_LIMIT
+    automaticReplies < replyLimit &&
+    duplicateReplies < duplicateReplyLimit
   ) {
     return false;
   }
@@ -826,7 +865,10 @@ const pauseAutomatedRepliesAfterBurst = async (
       companyId: ticket.companyId,
       whatsappId: ticket.whatsappId,
       automaticReplies,
-      duplicateReplies
+      duplicateReplies,
+      windowMinutes,
+      replyLimit,
+      duplicateReplyLimit
     },
     "Automated replies blocked after burst detection"
   );

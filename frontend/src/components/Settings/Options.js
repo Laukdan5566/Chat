@@ -102,6 +102,11 @@ export default function Options(props) {
   const [defaultLanguage, setDefaultLanguage] = useState("");
   const [allowSignup, setAllowSignup] = useState("disabled");
   const [chatbotAutoExit, setChatbotAutoExit] = useState("disabled");
+  const [automatedReplyWindowMinutes, setAutomatedReplyWindowMinutes] =
+    useState("5");
+  const [automatedReplyLimit, setAutomatedReplyLimit] = useState("6");
+  const [automatedDuplicateReplyLimit, setAutomatedDuplicateReplyLimit] =
+    useState("2");
   const [showNumericIcons, setShowNumericIcons] = useState("disabled");
   const [CheckMsgIsGroup, setCheckMsgIsGroupType] = useState("enabled");
   const [soundGroupNotifications, setSoundGroupNotifications] =
@@ -196,6 +201,25 @@ export default function Options(props) {
       if (chatbotAutoExit) {
         setChatbotAutoExit(chatbotAutoExit.value);
       }
+
+      const automatedReplyWindowMinutes = settings.find(
+        s => s.key === "automatedReplyWindowMinutes"
+      );
+      setAutomatedReplyWindowMinutes(
+        automatedReplyWindowMinutes?.value || "5"
+      );
+
+      const automatedReplyLimit = settings.find(
+        s => s.key === "automatedReplyLimit"
+      );
+      setAutomatedReplyLimit(automatedReplyLimit?.value || "6");
+
+      const automatedDuplicateReplyLimit = settings.find(
+        s => s.key === "automatedDuplicateReplyLimit"
+      );
+      setAutomatedDuplicateReplyLimit(
+        automatedDuplicateReplyLimit?.value || "2"
+      );
 
       const showNumericIcons = settings.find(s => s.key === "showNumericIcons");
       setShowNumericIcons(showNumericIcons?.value || "disabled");
@@ -365,6 +389,14 @@ export default function Options(props) {
       value
     });
     i18nToast.success("settings.success");
+  }
+
+  async function handleBoundedNumberSetting(key, value, setter, min, max, fallback) {
+    const parsed = Number.parseInt(value, 10);
+    const normalized = String(
+      Math.min(Math.max(Number.isFinite(parsed) ? parsed : fallback, min), max)
+    );
+    await handleSetting(key, normalized, setter);
   }
 
   async function handleQuickMessages(value) {
@@ -553,6 +585,74 @@ export default function Options(props) {
                 {i18n.t("settings.QuickMessages.options.disabled")}
               </MenuItem>
             </Select>
+          </FormControl>
+        </Grid>
+
+        <Grid xs={12} sm={4} md={4} item>
+          <FormControl className={classes.selectContainer}>
+            <TextField
+              label="Proteção do bot: janela (minutos)"
+              type="number"
+              inputProps={{ min: 1, max: 60 }}
+              value={automatedReplyWindowMinutes}
+              onChange={event => setAutomatedReplyWindowMinutes(event.target.value)}
+              onBlur={() =>
+                handleBoundedNumberSetting(
+                  "automatedReplyWindowMinutes",
+                  automatedReplyWindowMinutes,
+                  setAutomatedReplyWindowMinutes,
+                  1,
+                  60,
+                  5
+                )
+              }
+            />
+          </FormControl>
+        </Grid>
+
+        <Grid xs={12} sm={4} md={4} item>
+          <FormControl className={classes.selectContainer}>
+            <TextField
+              label="Proteção do bot: máximo de respostas"
+              type="number"
+              inputProps={{ min: 2, max: 50 }}
+              value={automatedReplyLimit}
+              onChange={event => setAutomatedReplyLimit(event.target.value)}
+              onBlur={() =>
+                handleBoundedNumberSetting(
+                  "automatedReplyLimit",
+                  automatedReplyLimit,
+                  setAutomatedReplyLimit,
+                  2,
+                  50,
+                  6
+                )
+              }
+            />
+          </FormControl>
+        </Grid>
+
+        <Grid xs={12} sm={4} md={4} item>
+          <FormControl className={classes.selectContainer}>
+            <TextField
+              label="Proteção do bot: repetição do mesmo texto"
+              type="number"
+              inputProps={{ min: 1, max: 10 }}
+              value={automatedDuplicateReplyLimit}
+              onChange={event =>
+                setAutomatedDuplicateReplyLimit(event.target.value)
+              }
+              onBlur={() =>
+                handleBoundedNumberSetting(
+                  "automatedDuplicateReplyLimit",
+                  automatedDuplicateReplyLimit,
+                  setAutomatedDuplicateReplyLimit,
+                  1,
+                  10,
+                  2
+                )
+              }
+            />
           </FormControl>
         </Grid>
 
