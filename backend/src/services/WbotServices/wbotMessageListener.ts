@@ -102,8 +102,9 @@ const ackMutex = new Mutex();
 const groupContactCache = new SimpleObjectCache(1000 * 30, logger);
 const outOfHoursCache = new SimpleObjectCache(1000 * 60 * 5, logger);
 
-const CHATBOT_REPLY_WINDOW_MS = 1000 * 60 * 2;
-const CHATBOT_REPLY_LIMIT = 5;
+const AUTOMATED_REPLY_WINDOW_MS = 1000 * 60 * 5;
+const AUTOMATED_REPLY_LIMIT = 6;
+const AUTOMATED_DUPLICATE_REPLY_LIMIT = 2;
 
 const replaceTextMessageBody = (msg: WAMessage, body: string) => {
   const message: any = msg.message;
@@ -124,8 +125,7 @@ const sendSalesRoutingMessage = async (
   ticket: Ticket,
   body: string
 ) => {
-  const message = await wbot.sendMessage(getJidOf(ticket), { text: body });
-  await verifyMessage(message, ticket, ticket.contact);
+  await sendAutomatedTextMessage(wbot, ticket, body);
 };
 
 const handleSalesRoutingBot = async ({
@@ -784,19 +784,29 @@ const createN8nNote = async (ticket: Ticket, note: string) => {
   });
 };
 
-const pauseChatbotAfterReplyBurst = async (ticket: Ticket) => {
-  const automaticReplies = await Message.count({
-    where: {
-      ticketId: ticket.id,
-      fromMe: true,
-      channel: "whatsapp",
-      createdAt: {
-        [Op.gte]: new Date(Date.now() - CHATBOT_REPLY_WINDOW_MS)
-      }
-    }
-  });
+const pauseAutomatedRepliesAfterBurst = async (
+  ticket: Ticket,
+  body?: string
+) => {
+  const createdAfter = new Date(Date.now() - AUTOMATED_REPLY_WINDOW_MS);
+  const totalRepliesWhere = {
+    ticketId: ticket.id,
+    fromMe: true,
+    createdAt: { [Op.gte]: createdAfter }
+  };
+  const duplicateRepliesWhere = body
+    ? { ...totalRepliesWhere, body }
+    : null;
 
-  if (automaticReplies < CHATBOT_REPLY_LIMIT) {
+  const [automaticReplies, duplicateReplies] = await Promise.all([
+    Message.count({ where: totalRepliesWhere }),
+    duplicateRepliesWhere ? Message.count({ where: duplicateRepliesWhere }) : 0
+  ]);
+
+  if (
+    automaticReplies < AUTOMATED_REPLY_LIMIT &&
+    duplicateReplies < AUTOMATED_DUPLICATE_REPLY_LIMIT
+  ) {
     return false;
   }
 
@@ -807,7 +817,7 @@ const pauseChatbotAfterReplyBurst = async (ticket: Ticket) => {
 
   await createN8nNote(
     ticket,
-    "Anotacao automatica: o chatbot foi pausado para evitar respostas repetidas a uma automacao externa. O atendimento aguarda intervencao humana."
+    "Anotacao automatica: as respostas do bot foram bloqueadas para evitar mensagens repetidas. O atendimento aguarda intervencao humana."
   );
 
   logger.warn(
@@ -815,13 +825,28 @@ const pauseChatbotAfterReplyBurst = async (ticket: Ticket) => {
       ticketId: ticket.id,
       companyId: ticket.companyId,
       whatsappId: ticket.whatsappId,
-      automaticReplies
+      automaticReplies,
+      duplicateReplies
     },
-    "Chatbot paused after repeated automatic replies"
+    "Automated replies blocked after burst detection"
   );
 
   return true;
 };
+
+async function sendAutomatedTextMessage(
+  wbot: Session,
+  ticket: Ticket,
+  body: string
+) {
+  if (await pauseAutomatedRepliesAfterBurst(ticket, body)) {
+    return false;
+  }
+
+  const message = await wbot.sendMessage(getJidOf(ticket), { text: body });
+  await verifyMessage(message, ticket, ticket.contact);
+  return true;
+}
 
 const wasInboundMessageAlreadyProcessed = async (
   msg: proto.IWebMessageInfo,
@@ -920,10 +945,7 @@ const handleN8nQueueWebhook = async (
 
     const text = getN8nActionText(action);
     if (text) {
-      const sentMessage = await wbot.sendMessage(getJidOf(ticket), {
-        text: formatBody(text, ticket)
-      });
-      await verifyMessage(sentMessage, ticket, ticket.contact);
+      await sendAutomatedTextMessage(wbot, ticket, formatBody(text, ticket));
     }
 
     const data = getN8nActionData(action);
@@ -1463,9 +1485,7 @@ const sendMenu = async (
       text: formatBody(textBody, ticket)
     };
 
-    const sendMsg = await wbot.sendMessage(getJidOf(ticket), textMessage);
-
-    await verifyMessage(sendMsg, ticket, ticket.contact);
+    await sendAutomatedTextMessage(wbot, ticket, textMessage.text);
   };
 
   await botText();
@@ -1558,10 +1578,11 @@ export const startQueue = async (
       const outOfHoursMessage =
         queue.outOfHoursMessage?.trim() ||
         "Estamos fora do horário de expediente";
-      const sentMessage = await wbot.sendMessage(getJidOf(ticket), {
-        text: formatBody(outOfHoursMessage, ticket)
-      });
-      await verifyMessage(sentMessage, ticket, contact);
+      await sendAutomatedTextMessage(
+        wbot,
+        ticket,
+        formatBody(outOfHoursMessage, ticket)
+      );
       const outOfHoursAction = await GetCompanySetting(
         companyId,
         "outOfHoursAction",
@@ -1587,10 +1608,7 @@ export const startQueue = async (
       if (filePath) {
         optionsMsg.caption = body;
       } else {
-        const sentMessage = await wbot.sendMessage(getJidOf(ticket), {
-          text: body
-        });
-        await verifyMessage(sentMessage, ticket, contact);
+        await sendAutomatedTextMessage(wbot, ticket, body);
         return;
       }
     }
@@ -1656,9 +1674,7 @@ const verifyQueue = async (
       text: formatBody(`${greetingMessage}\n\n${options}`, ticket)
     };
 
-    const sendMsg = await wbot.sendMessage(getJidOf(ticket), textMessage);
-
-    await verifyMessage(sendMsg, ticket, ticket.contact);
+    await sendAutomatedTextMessage(wbot, ticket, textMessage.text);
   };
 
   if (choosenQueue) {
@@ -1893,8 +1909,7 @@ const handleChartbot = async (
         });
         await verifyMediaMessage(sentMessage, ticket, ticket.contact);
       } else if (text) {
-        const sendMsg = await wbot.sendMessage(getJidOf(ticket), { text });
-        await verifyMessage(sendMsg, ticket, ticket.contact);
+        await sendAutomatedTextMessage(wbot, ticket, text);
       }
 
       if (currentOption.exitChatbot) {
@@ -2303,10 +2318,11 @@ const handleMessage = async (
               const outOfHoursMessage =
                 whatsapp.outOfHoursMessage.trim() ||
                 _t("We are out of office hours right now", ticket);
-              const sentMessage = await wbot.sendMessage(getJidOf(ticket), {
-                text: formatBody(outOfHoursMessage, ticket)
-              });
-              await verifyMessage(sentMessage, ticket, ticket.contact);
+              await sendAutomatedTextMessage(
+                wbot,
+                ticket,
+                formatBody(outOfHoursMessage, ticket)
+              );
             }
             if (ticket.status !== "open") {
               await UpdateTicketService({
@@ -2339,10 +2355,11 @@ const handleMessage = async (
               const outOfHoursMessage =
                 queue.outOfHoursMessage?.trim() ||
                 _t("We are out of office hours right now", ticket);
-              const sentMessage = await wbot.sendMessage(getJidOf(ticket), {
-                text: formatBody(outOfHoursMessage, ticket)
-              });
-              await verifyMessage(sentMessage, ticket, ticket.contact);
+              await sendAutomatedTextMessage(
+                wbot,
+                ticket,
+                formatBody(outOfHoursMessage, ticket)
+              );
             }
             if (ticket.status !== "open") {
               await UpdateTicketService({
@@ -2417,9 +2434,11 @@ const handleMessage = async (
       if (whatsapp.greetingMessage) {
         const debouncedSentMessage = debounce(
           async () => {
-            await wbot.sendMessage(getJidOf(ticket), {
-              text: formatBody(`${whatsapp.greetingMessage}`, ticket)
-            });
+            await sendAutomatedTextMessage(
+              wbot,
+              ticket,
+              formatBody(`${whatsapp.greetingMessage}`, ticket)
+            );
           },
           1000,
           ticket.id
@@ -2430,7 +2449,7 @@ const handleMessage = async (
     }
 
     if (ticket.queue && ticket.chatbot) {
-      if (await pauseChatbotAfterReplyBurst(ticket)) {
+      if (await pauseAutomatedRepliesAfterBurst(ticket)) {
         return;
       }
 
