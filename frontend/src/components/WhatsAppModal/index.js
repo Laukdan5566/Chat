@@ -27,6 +27,7 @@ import {
 } from "@material-ui/core";
 
 import api from "../../services/api";
+import { getBackendURL } from "../../services/config";
 import { i18n } from "../../translate/i18n";
 import toastError from "../../errors/toastError";
 import QueueSelect from "../QueueSelect";
@@ -287,7 +288,7 @@ const WhatsAppModal = ({ open, onClose, whatsAppId }) => {
                           <div>
                             <TextField
                               label="URL do webhook"
-                              value={`${window.location.origin}/api/official-whatsapp/notificame/${values.apiWebhookSecret}`}
+                                value={`${getBackendURL()}/official-whatsapp/notificame/${values.apiWebhookSecret}`}
                               fullWidth
                               variant="outlined"
                               margin="dense"
