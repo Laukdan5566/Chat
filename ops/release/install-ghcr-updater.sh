@@ -23,4 +23,4 @@ exec /opt/ticketz/apply-ghcr-release.sh "$@"
 EOF
 chmod 755 "$COMMAND_PATH"
 
-echo "Installed. Update with: sudo chat-update <image-tag>"
+echo "Installed. Update with: chat-update <image-tag>"

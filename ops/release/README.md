@@ -17,7 +17,7 @@ No servidor, execute uma vez como `root`:
 Depois, para publicar uma versao aprovada:
 
 ```bash
-sudo chat-update release-2026.09.02
+chat-update release-2026.09.02
 ```
 
 O comando baixa somente backend e frontend, salva as referencias atuais para
