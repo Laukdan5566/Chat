@@ -1,7 +1,7 @@
 services:
   backend:
-    image: ${BACKEND_IMAGE:?Set BACKEND_IMAGE to an approved GHCR tag}
+    image: ${BACKEND_IMAGE:-ghcr.io/laukdan5566/chat-backend:candidate}
     pull_policy: always
   frontend:
-    image: ${FRONTEND_IMAGE:?Set FRONTEND_IMAGE to an approved GHCR tag}
+    image: ${FRONTEND_IMAGE:-ghcr.io/laukdan5566/chat-frontend:candidate}
     pull_policy: always

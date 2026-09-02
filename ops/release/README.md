@@ -24,8 +24,16 @@ O comando baixa somente backend e frontend, salva as referencias atuais para
 rollback, recria somente esses dois containers e valida backend e frontend.
 PostgreSQL, Redis, volumes e os demais servicos nao sao alterados.
 
-Para testar uma imagem antes da release, pode ser usado o SHA completo do
-commit. O atalho `candidate` deve ser usado somente em ambiente de teste.
+Para atualizar sempre para a ultima imagem publicada no `main`, o compose
+instalado usa a tag `candidate`. Nesse caso, basta executar no diretorio do
+compose:
+
+```bash
+docker compose pull backend frontend && docker compose up -d --no-build backend frontend
+```
+
+Para fixar uma versao antes de promover, pode ser usado o SHA completo do
+commit ou uma tag `release-*`.
 
 ## Acesso ao GHCR
 
