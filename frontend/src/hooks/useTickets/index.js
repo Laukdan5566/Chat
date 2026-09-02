@@ -26,6 +26,8 @@ const useTickets = ({
 
   useEffect(() => {
     setLoading(true);
+    // Only delay free-text searches. Queue changes and initial lists should load immediately.
+    const debounceDelay = isSearch && searchParam ? 500 : 0;
     const delayDebounceFn = setTimeout(() => {
       const fetchTickets = async () => {
         try {
@@ -57,7 +59,7 @@ const useTickets = ({
         }
       };
       fetchTickets();
-    }, 500);
+    }, debounceDelay);
     return () => clearTimeout(delayDebounceFn);
   }, [
     searchParam,
