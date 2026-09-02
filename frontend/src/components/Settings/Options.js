@@ -107,6 +107,10 @@ export default function Options(props) {
   const [automatedReplyLimit, setAutomatedReplyLimit] = useState("6");
   const [automatedDuplicateReplyLimit, setAutomatedDuplicateReplyLimit] =
     useState("2");
+  const [automatedReplyManualTriage, setAutomatedReplyManualTriage] =
+    useState("disabled");
+  const [automatedReplyManualTriageQueueId, setAutomatedReplyManualTriageQueueId] =
+    useState("0");
   const [showNumericIcons, setShowNumericIcons] = useState("disabled");
   const [CheckMsgIsGroup, setCheckMsgIsGroupType] = useState("enabled");
   const [soundGroupNotifications, setSoundGroupNotifications] =
@@ -219,6 +223,20 @@ export default function Options(props) {
       );
       setAutomatedDuplicateReplyLimit(
         automatedDuplicateReplyLimit?.value || "2"
+      );
+
+      const automatedReplyManualTriage = settings.find(
+        s => s.key === "automatedReplyManualTriage"
+      );
+      setAutomatedReplyManualTriage(
+        automatedReplyManualTriage?.value || "disabled"
+      );
+
+      const automatedReplyManualTriageQueueId = settings.find(
+        s => s.key === "automatedReplyManualTriageQueueId"
+      );
+      setAutomatedReplyManualTriageQueueId(
+        automatedReplyManualTriageQueueId?.value || "0"
       );
 
       const showNumericIcons = settings.find(s => s.key === "showNumericIcons");
@@ -655,6 +673,56 @@ export default function Options(props) {
             />
           </FormControl>
         </Grid>
+
+        <Grid xs={12} sm={6} md={4} item>
+          <FormControl className={classes.selectContainer}>
+            <InputLabel id="automated-reply-manual-triage-label">
+              Proteção do bot: destino ao bloquear
+            </InputLabel>
+            <Select
+              labelId="automated-reply-manual-triage-label"
+              value={automatedReplyManualTriage}
+              onChange={event =>
+                handleSetting(
+                  "automatedReplyManualTriage",
+                  event.target.value,
+                  setAutomatedReplyManualTriage
+                )
+              }
+            >
+              <MenuItem value="disabled">Pausar apenas o bot</MenuItem>
+              <MenuItem value="enabled">Ativar triagem manual</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+
+        {automatedReplyManualTriage === "enabled" && (
+          <Grid xs={12} sm={6} md={4} item>
+            <FormControl className={classes.selectContainer}>
+              <InputLabel id="automated-reply-manual-triage-queue-label">
+                Fila de triagem manual
+              </InputLabel>
+              <Select
+                labelId="automated-reply-manual-triage-queue-label"
+                value={automatedReplyManualTriageQueueId}
+                onChange={event =>
+                  handleSetting(
+                    "automatedReplyManualTriageQueueId",
+                    event.target.value,
+                    setAutomatedReplyManualTriageQueueId
+                  )
+                }
+              >
+                <MenuItem value="0">Selecione uma fila</MenuItem>
+                {queues.map(queue => (
+                  <MenuItem key={queue.id} value={String(queue.id)}>
+                    {queue.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+        )}
 
         <Grid xs={12} sm={6} md={4} item>
           <FormControl className={classes.selectContainer}>

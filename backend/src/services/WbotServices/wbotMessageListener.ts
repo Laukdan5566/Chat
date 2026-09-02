@@ -105,6 +105,7 @@ const outOfHoursCache = new SimpleObjectCache(1000 * 60 * 5, logger);
 const DEFAULT_AUTOMATED_REPLY_WINDOW_MINUTES = 5;
 const DEFAULT_AUTOMATED_REPLY_LIMIT = 6;
 const DEFAULT_AUTOMATED_DUPLICATE_REPLY_LIMIT = 2;
+const AUTOMATED_REPLY_MANUAL_TRIAGE_ENABLED = "enabled";
 
 const getBoundedCompanyNumberSetting = async (
   companyId: number,
@@ -804,7 +805,13 @@ const pauseAutomatedRepliesAfterBurst = async (
   ticket: Ticket,
   body?: string
 ) => {
-  const [windowMinutes, replyLimit, duplicateReplyLimit] = await Promise.all([
+  const [
+    windowMinutes,
+    replyLimit,
+    duplicateReplyLimit,
+    manualTriage,
+    manualTriageQueueId
+  ] = await Promise.all([
     getBoundedCompanyNumberSetting(
       ticket.companyId,
       "automatedReplyWindowMinutes",
@@ -825,7 +832,9 @@ const pauseAutomatedRepliesAfterBurst = async (
       DEFAULT_AUTOMATED_DUPLICATE_REPLY_LIMIT,
       1,
       10
-    )
+    ),
+    GetCompanySetting(ticket.companyId, "automatedReplyManualTriage", "disabled"),
+    GetCompanySetting(ticket.companyId, "automatedReplyManualTriageQueueId", "0")
   ]);
   const createdAfter = new Date(Date.now() - windowMinutes * 60 * 1000);
   const totalRepliesWhere = {
@@ -849,14 +858,33 @@ const pauseAutomatedRepliesAfterBurst = async (
     return false;
   }
 
+  const triageQueueId = Number.parseInt(manualTriageQueueId, 10);
+  const triageQueue =
+    manualTriage === AUTOMATED_REPLY_MANUAL_TRIAGE_ENABLED &&
+    Number.isInteger(triageQueueId) &&
+    triageQueueId > 0
+      ? await Queue.findOne({
+          where: { id: triageQueueId, companyId: ticket.companyId }
+        })
+      : null;
+
   await updateTicket(ticket, {
     chatbot: false,
-    queueOptionId: null
+    queueOptionId: null,
+    ...(triageQueue
+      ? {
+          queueId: triageQueue.id,
+          userId: null,
+          status: "pending"
+        }
+      : {})
   });
 
   await createN8nNote(
     ticket,
-    "Anotacao automatica: as respostas do bot foram bloqueadas para evitar mensagens repetidas. O atendimento aguarda intervencao humana."
+    triageQueue
+      ? `Anotacao automatica: as respostas do bot foram bloqueadas para evitar mensagens repetidas. O atendimento foi transferido para a fila ${triageQueue.name} para triagem manual.`
+      : "Anotacao automatica: as respostas do bot foram bloqueadas para evitar mensagens repetidas. O atendimento aguarda intervencao humana."
   );
 
   logger.warn(
@@ -868,7 +896,8 @@ const pauseAutomatedRepliesAfterBurst = async (
       duplicateReplies,
       windowMinutes,
       replyLimit,
-      duplicateReplyLimit
+      duplicateReplyLimit,
+      manualTriageQueueId: triageQueue?.id || null
     },
     "Automated replies blocked after burst detection"
   );
