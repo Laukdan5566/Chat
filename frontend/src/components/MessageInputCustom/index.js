@@ -375,6 +375,7 @@ const ActionButtons = props => {
       <IconButton
         aria-label="sendMessage"
         component="span"
+        onMouseDown={event => event.preventDefault()}
         onTouchEnd={handleSendTouchEnd}
         onClick={handleSendClick}
         disabled={disableOption}
@@ -1105,6 +1106,10 @@ const MessageInputCustom = props => {
     }
   };
 
+  const focusMessageInput = () => {
+    window.requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
   const handleSendMessage = async () => {
     const text = inputMessage.trim();
     if (
@@ -1141,12 +1146,12 @@ const MessageInputCustom = props => {
       setReplyingMessage(null);
       setEditingMessage(null);
       setSignMessage(true);
-      inputRef.current?.focus();
     } catch (err) {
       toastError(err);
     } finally {
       messageSendInFlightRef.current = false;
       setLoading(false);
+      focusMessageInput();
     }
   };
 
