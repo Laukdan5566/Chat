@@ -11,6 +11,7 @@ import Whatsapp from "../../models/Whatsapp";
 import Queue from "../../models/Queue";
 import { incrementCounter } from "../CounterServices/IncrementCounter";
 import TicketTraking from "../../models/TicketTraking";
+import AppError from "../../errors/AppError";
 
 const createTicketMutex = new Mutex();
 
@@ -36,6 +37,10 @@ const internalFindOrCreateTicketService = async (
 ): Promise<{ ticket: Ticket; justCreated: boolean }> => {
   let justCreated = false;
   const result = await sequelize.transaction(async () => {
+    if (groupContact && groupContact.companyId !== companyId) {
+      throw new AppError("ERR_GROUP_CONTACT_COMPANY_MISMATCH", 400);
+    }
+
     let ticket = await Ticket.findOne({
       where: {
         status: {

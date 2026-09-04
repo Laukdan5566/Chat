@@ -2066,15 +2066,16 @@ const handleMessage = async (
 
     if (isGroup) {
       groupContact = await wbotMutex.runExclusive(async () => {
-        let result = groupContactCache.get(msg.key.remoteJid);
-        if (!result) {
+        const cacheKey = `${wbot.id}:${msg.key.remoteJid}`;
+        let result = groupContactCache.get(cacheKey);
+        if (!result || result.companyId !== companyId) {
           const groupMetadata = await wbot.groupMetadata(msg.key.remoteJid);
           const msgGroupContact = {
             id: groupMetadata.id,
             name: groupMetadata.subject
           };
           result = await verifyContact(msgGroupContact, wbot, companyId);
-          groupContactCache.set(msg.key.remoteJid, result);
+          groupContactCache.set(cacheKey, result);
         }
         return result;
       });
