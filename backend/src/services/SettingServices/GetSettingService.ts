@@ -18,6 +18,7 @@ const safeSettingsKeys = {
   tagsMode: "ticket",
   spyTicketVisibility: "admin",
   zammadEnabled: "false",
+  fpOpsEnabled: "false",
   zammadGroup: "",
   zammadPriority: "2 normal"
 };
@@ -26,6 +27,7 @@ export const GetSettingService = async ({
   key,
   user
 }: Request): Promise<string> => {
+  if (key === "_fpOpsToken") throw new AppError("ERR_NO_PERMISSION", 403);
   if (user.profile !== "admin" && !(key in safeSettingsKeys)) {
     throw new AppError("ERR_NO_PERMISSION", 403);
   }

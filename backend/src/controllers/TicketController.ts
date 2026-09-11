@@ -13,7 +13,7 @@ import ListTicketsServiceKanban from "../services/TicketServices/ListTicketsServ
 import ShowUserService from "../services/UserServices/ShowUserService";
 import { hasPermission } from "../helpers/UserPermissions";
 import AppError from "../errors/AppError";
-import CreateZammadTicketService from "../services/ZammadServices/CreateZammadTicketService";
+import CreateHelpdeskTicketService from "../services/HelpdeskServices/CreateHelpdeskTicketService";
 
 type IndexQuery = {
   isSearch?: string;
@@ -266,7 +266,7 @@ export const createZammadTicket = async (
   const ticket = await ShowTicketService(ticketId, companyId);
   await assertCanAccessTicket(ticket, userId);
 
-  const zammadTicket = await CreateZammadTicketService({
+  const zammadTicket = await CreateHelpdeskTicketService({
     ticketId: Number(ticketId),
     companyId,
     userId: Number(userId),
@@ -274,6 +274,7 @@ export const createZammadTicket = async (
     summary: req.body.summary,
     group: req.body.group,
     priority: req.body.priority,
+    category: req.body.category,
     includeMessages: req.body.includeMessages !== false
   });
 

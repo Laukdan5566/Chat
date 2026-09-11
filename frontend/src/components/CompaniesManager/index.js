@@ -101,6 +101,9 @@ export function CompanyForm(props) {
     planId: "",
     status: true,
     campaignsEnabled: false,
+    fpOpsEnabled: false,
+    fpOpsUrl: "",
+    fpOpsToken: "",
     zammadEnabled: false,
     zammadUrl: "",
     zammadToken: "",
@@ -360,7 +363,25 @@ export function CompanyForm(props) {
               </Grid>
               <Grid xs={12} sm={6} md={2} item>
                 <FormControl margin="dense" variant="outlined" fullWidth>
-                  <InputLabel htmlFor="zammad-selection">Zammad</InputLabel>
+                  <InputLabel htmlFor="fp-ops-selection">FP Ops</InputLabel>
+                  <Field as={Select} id="fp-ops-selection" name="fpOpsEnabled" label="FP Ops" disabled={!initialValue.id}>
+                    <MenuItem value={true}>Habilitado</MenuItem>
+                    <MenuItem value={false}>Desabilitado</MenuItem>
+                  </Field>
+                </FormControl>
+              </Grid>
+              <Grid xs={12} sm={6} md={4} item>
+                <Field as={TextField} name="fpOpsUrl" label="URL do FP Ops" disabled={!initialValue.id}
+                  variant="outlined" fullWidth margin="dense" />
+              </Grid>
+              <Grid xs={12} sm={6} md={4} item>
+                <Field as={TextField} name="fpOpsToken" label="Token do FP Ops" disabled={!initialValue.id}
+                  type="password" autoComplete="new-password"
+                  variant="outlined" fullWidth margin="dense" />
+              </Grid>
+              <Grid xs={12} sm={6} md={2} item>
+                <FormControl margin="dense" variant="outlined" fullWidth>
+                  <InputLabel htmlFor="zammad-selection">Zammad (legado)</InputLabel>
                   <Field
                     as={Select}
                     id="zammad-selection"
@@ -377,7 +398,7 @@ export function CompanyForm(props) {
               <Grid xs={12} sm={6} md={4} item>
                 <Field
                   as={TextField}
-                  label="URL do Zammad"
+                  label="URL do Zammad (legado)"
                   name="zammadUrl"
                   variant="outlined"
                   className={classes.fullWidth}
@@ -610,6 +631,9 @@ export function CompaniesManagerGrid(props) {
   };
 
   const renderZammadStatus = row => {
+    if (row.settings?.some(setting => setting.key === "fpOpsEnabled" && ["true", "enabled"].includes(setting.value))) {
+      return "FP Ops";
+    }
     if (
       has(row, "settings") &&
       isArray(row.settings) &&
@@ -661,7 +685,7 @@ export function CompaniesManagerGrid(props) {
             <TableCell align="left">Plano</TableCell>
             <TableCell align="left">Canais</TableCell>
             <TableCell align="left">Campanhas</TableCell>
-            <TableCell align="left">Zammad</TableCell>
+            <TableCell align="left">Helpdesk</TableCell>
             <TableCell align="left">Status</TableCell>
             <TableCell align="left">Criada Em</TableCell>
             <TableCell align="left">Vencimento</TableCell>
@@ -732,6 +756,9 @@ export default function CompaniesManager() {
     planId: "",
     status: true,
     campaignsEnabled: false,
+    fpOpsEnabled: false,
+    fpOpsUrl: "",
+    fpOpsToken: "",
     zammadEnabled: false,
     zammadUrl: "",
     zammadToken: "",
@@ -813,6 +840,9 @@ export default function CompaniesManager() {
       planId: "",
       status: true,
       campaignsEnabled: false,
+      fpOpsEnabled: false,
+      fpOpsUrl: "",
+      fpOpsToken: "",
       zammadEnabled: false,
       zammadUrl: "",
       zammadToken: "",
@@ -857,6 +887,9 @@ export default function CompaniesManager() {
       status: data.status === false ? false : true,
       campaignsEnabled,
       zammadEnabled,
+      fpOpsEnabled: ["true", "enabled"].includes(getSettingValue(data.settings, "fpOpsEnabled")),
+      fpOpsUrl: getSettingValue(data.settings, "fpOpsUrl"),
+      fpOpsToken: "",
       zammadUrl: getSettingValue(data.settings, "zammadUrl"),
       zammadToken: "",
       zammadGroup: getSettingValue(data.settings, "zammadGroup"),

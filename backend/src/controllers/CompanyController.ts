@@ -37,6 +37,9 @@ type CompanyData = {
   zammadToken?: string;
   zammadGroup?: string;
   zammadPriority?: string;
+  fpOpsEnabled?: boolean;
+  fpOpsUrl?: string;
+  fpOpsToken?: string;
 };
 
 type SchedulesData = {

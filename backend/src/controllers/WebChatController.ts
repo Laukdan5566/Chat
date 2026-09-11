@@ -25,7 +25,7 @@ import ShowTicketService from "../services/TicketServices/ShowTicketService";
 import UpdateTicketService from "../services/TicketServices/UpdateTicketService";
 import { incrementCounter } from "../services/CounterServices/IncrementCounter";
 import { runWebChatAutomation } from "../services/WebChatServices/WebChatAutomationService";
-import CreateZammadTicketService from "../services/ZammadServices/CreateZammadTicketService";
+import CreateHelpdeskTicketService from "../services/HelpdeskServices/CreateHelpdeskTicketService";
 
 type RateBucket = {
   count: number;
@@ -704,7 +704,7 @@ export const createZammadTicket = async (
   const cleanTitle = cleanText(title, "Assunto", 3, 120);
   const cleanSummary = cleanText(summary, "Descrição", 5, 2000);
 
-  const zammadTicket = await CreateZammadTicketService({
+  const zammadTicket = await CreateHelpdeskTicketService({
     ticketId: ticket.id,
     companyId,
     title: cleanTitle,

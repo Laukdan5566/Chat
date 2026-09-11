@@ -1,6 +1,7 @@
 import Company from "../../models/Company";
 import Plan from "../../models/Plan";
 import Setting from "../../models/Setting";
+import { Op } from "sequelize";
 
 const FindAllCompanyService = async (): Promise<Company[]> => {
   const companies = await Company.findAll({
@@ -17,7 +18,7 @@ const FindAllCompanyService = async (): Promise<Company[]> => {
           "instagramEnabled"
         ]
       },
-      { model: Setting, as: "settings" }
+      { model: Setting, as: "settings", required: false, where: { key: { [Op.ne]: "_fpOpsToken" } } }
     ]
   });
   return companies;

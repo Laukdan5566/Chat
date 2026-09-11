@@ -25,7 +25,7 @@ ticketRoutes.get(
 ticketRoutes.post("/tickets", isAuth, isCompliant, TicketController.store);
 
 ticketRoutes.post(
-  "/tickets/:ticketId/zammad",
+  ["/tickets/:ticketId/zammad", "/tickets/:ticketId/helpdesk"],
   isAuth,
   isCompliant,
   TicketController.createZammadTicket

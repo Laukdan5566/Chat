@@ -20,6 +20,9 @@ interface CompanyData {
   zammadToken?: string;
   zammadGroup?: string;
   zammadPriority?: string;
+  fpOpsEnabled?: boolean;
+  fpOpsUrl?: string;
+  fpOpsToken?: string;
 }
 
 const upsertSetting = async (
@@ -70,6 +73,25 @@ const UpdateCompanyService = async (
   }
 
   const previousPlanId = company.planId;
+  if (companyData.fpOpsUrl) {
+    try {
+      const url = new URL(companyData.fpOpsUrl);
+      if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash) throw new Error();
+    } catch {
+      throw new AppError("Configure uma URL HTTPS valida para o FP Ops", 400);
+    }
+  }
+  if (companyData.fpOpsEnabled !== undefined && typeof companyData.fpOpsEnabled !== "boolean") {
+    throw new AppError("Configuracao FP Ops invalida", 400);
+  }
+  if (companyData.fpOpsEnabled === true) {
+    const configured = await Setting.findAll({ where: { companyId: company.id, key: ["fpOpsUrl", "_fpOpsToken"] } });
+    const saved = (key: string) => configured.find(setting => setting.key === key)?.value || "";
+    if (!(companyData.fpOpsUrl ?? saved("fpOpsUrl")).trim() ||
+        !(companyData.fpOpsToken?.trim() || saved("_fpOpsToken"))) {
+      throw new AppError("Cadastre a URL e o token antes de ativar o FP Ops", 400);
+    }
+  }
 
   await company.update({
     name,
@@ -104,6 +126,17 @@ const UpdateCompanyService = async (
 
   if (zammadPriority !== undefined) {
     await upsertSetting(company.id, "zammadPriority", zammadPriority || "");
+  }
+
+  if (companyData.fpOpsUrl !== undefined) {
+    await upsertSetting(company.id, "fpOpsUrl", companyData.fpOpsUrl.trim());
+  }
+  if (companyData.fpOpsToken?.trim()) {
+    await upsertSetting(company.id, "_fpOpsToken", companyData.fpOpsToken.trim());
+  }
+  if (companyData.fpOpsEnabled !== undefined) {
+    await upsertSetting(company.id, "fpOpsEnabled", companyData.fpOpsEnabled);
+    if (companyData.fpOpsEnabled) await upsertSetting(company.id, "zammadEnabled", false);
   }
 
   if (dueDate && new Date(dueDate) > new Date()) {

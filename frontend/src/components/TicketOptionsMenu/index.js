@@ -36,6 +36,8 @@ const TicketOptionsMenu = ({
   const [participantsModalOpen, setParticipantsModalOpen] = useState(false);
   const [zammadModalOpen, setZammadModalOpen] = useState(false);
   const [zammadEnabled, setZammadEnabled] = useState(false);
+  const [fpOpsEnabled, setFpOpsEnabled] = useState(false);
+  const helpdeskName = fpOpsEnabled ? "FP Ops" : "Zammad";
   const [zammadTitle, setZammadTitle] = useState("");
   const [zammadSummary, setZammadSummary] = useState("");
   const [zammadGroup, setZammadGroup] = useState("");
@@ -59,6 +61,9 @@ const TicketOptionsMenu = ({
 
   useEffect(() => {
     let active = true;
+    getCachedSetting("fpOpsEnabled", "false").then(value => {
+      if (active) setFpOpsEnabled(value === "true" || value === "enabled");
+    });
     getCachedSetting("zammadEnabled", "false").then(value => {
       if (active) {
         setZammadEnabled(value === "true" || value === "enabled");
@@ -66,6 +71,9 @@ const TicketOptionsMenu = ({
     });
 
     const onSettingsUpdated = event => {
+      if (event.detail?.key === "fpOpsEnabled") {
+        setFpOpsEnabled(["true", "enabled"].includes(event.detail.value));
+      }
       if (event.detail?.key === "zammadEnabled") {
         setZammadEnabled(
           event.detail.value === "true" || event.detail.value === "enabled"
@@ -114,7 +122,7 @@ const TicketOptionsMenu = ({
     setZammadTitle(`Suporte interno - ${ticket.contact.name}`);
     setZammadSummary("");
     setZammadGroup(await getCachedSetting("zammadGroup", ""));
-    setZammadPriority(await getCachedSetting("zammadPriority", "2 normal"));
+    setZammadPriority(fpOpsEnabled ? "normal" : await getCachedSetting("zammadPriority", "2 normal"));
     setZammadIncludeMessages(true);
     setZammadModalOpen(true);
     handleClose();
@@ -147,14 +155,14 @@ const TicketOptionsMenu = ({
 
     setCreatingZammadTicket(true);
     try {
-      const { data } = await api.post(`/tickets/${ticket.id}/zammad`, {
+      const { data } = await api.post(`/tickets/${ticket.id}/helpdesk`, {
         title: zammadTitle.trim(),
         summary: zammadSummary.trim(),
         group: zammadGroup.trim(),
         priority: zammadPriority.trim(),
         includeMessages: zammadIncludeMessages
       });
-      toast.success(`Chamado Zammad #${data.number || data.id} aberto`);
+      toast.success(`Chamado ${helpdeskName} #${data.number || data.id} ${data.created === false ? "ja vinculado" : "aberto"}`);
       setZammadModalOpen(false);
       if (data.url) {
         window.open(data.url, "_blank", "noopener,noreferrer");
@@ -209,7 +217,7 @@ const TicketOptionsMenu = ({
             Participantes
           </MenuItem>
         )}
-        {zammadEnabled && (
+        {(fpOpsEnabled || zammadEnabled) && (
           <MenuItem onClick={handleOpenZammadModal}>Abrir chamado</MenuItem>
         )}
         {(!ticket.isGroup || !showTabGroups || user.profile === "admin") && (
@@ -289,7 +297,7 @@ const TicketOptionsMenu = ({
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Abrir chamado no Zammad</DialogTitle>
+        <DialogTitle>Abrir chamado no {helpdeskName}</DialogTitle>
         <DialogContent dividers>
           <TextField
             autoFocus
@@ -312,6 +320,7 @@ const TicketOptionsMenu = ({
             margin="dense"
           />
           <TextField
+            style={{ display: fpOpsEnabled ? "none" : undefined }}
             label="Grupo"
             value={zammadGroup}
             onChange={e => setZammadGroup(e.target.value)}
@@ -322,13 +331,21 @@ const TicketOptionsMenu = ({
           />
           <TextField
             label="Prioridade"
+            select={fpOpsEnabled}
             value={zammadPriority}
             onChange={e => setZammadPriority(e.target.value)}
             variant="outlined"
             fullWidth
             margin="dense"
-            placeholder="2 normal"
-          />
+            placeholder={fpOpsEnabled ? "normal" : "2 normal"}
+          >
+            {fpOpsEnabled && [
+              <MenuItem key="low" value="low">Baixa</MenuItem>,
+              <MenuItem key="normal" value="normal">Normal</MenuItem>,
+              <MenuItem key="high" value="high">Alta</MenuItem>,
+              <MenuItem key="critical" value="critical">Critica</MenuItem>
+            ]}
+          </TextField>
           <MenuItem
             selected={zammadIncludeMessages}
             onClick={() => setZammadIncludeMessages(!zammadIncludeMessages)}
