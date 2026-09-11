@@ -1053,8 +1053,8 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
   };
 
   const lightboxMedia = useMemo(() => {
-    return buildMediaGalleryData(messagesList);
-  }, [messagesList]);
+    return buildMediaGalleryData([...contactHistoryMessages, ...messagesList]);
+  }, [contactHistoryMessages, messagesList]);
 
   const openLightboxForMessage = messageId => {
     const index = lightboxMedia.byMessageId[messageId];
@@ -1158,7 +1158,7 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
       );
     }
 
-    if (!document || message.mediaType === "video") {
+    if (!document && message.mediaType === "video") {
       return (
         <>
           <div

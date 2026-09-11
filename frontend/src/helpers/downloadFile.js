@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export async function downloadFile(fileurl) {
-  const url = new URL(fileurl);
+  const url = new URL(fileurl, window.location.href);
   const filename = url.pathname.substring(url.pathname.lastIndexOf("/") + 1);
 
   url.searchParams.append("_cb", Date.now()); // cache busting
@@ -15,8 +15,7 @@ export async function downloadFile(fileurl) {
     const response = await axios.get(url.toString(), {
       responseType: "blob"
     });
-    const blob = new Blob([response.data]);
-    downloadUrl = window.URL.createObjectURL(blob);
+    downloadUrl = window.URL.createObjectURL(response.data);
     link.href = downloadUrl;
   } catch (err) {
     // Fallback to direct download if CORS or other issues occur
@@ -29,6 +28,7 @@ export async function downloadFile(fileurl) {
   link.click();
   document.body.removeChild(link);
   if (downloadUrl) {
-    window.URL.revokeObjectURL(downloadUrl);
+    // Give the browser time to start consuming the file before releasing it.
+    window.setTimeout(() => window.URL.revokeObjectURL(downloadUrl), 60000);
   }
 }
