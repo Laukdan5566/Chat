@@ -905,8 +905,10 @@ const MessageInputCustom = props => {
 
   const inputRef = useRef();
   const mediaUploadInFlightRef = useRef(false);
-  const messageSendInFlightRef = useRef(false);
-  const noteSendInFlightRef = useRef(false);
+  const submitLockRef = useRef(false);
+  const sendQueueRef = useRef(Promise.resolve());
+  const currentTicketIdRef = useRef(ticketId);
+  currentTicketIdRef.current = ticketId;
   const { setReplyingMessage, replyingMessage } =
     useContext(ReplyMessageContext);
   const { setEditingMessage, editingMessage } = useContext(EditMessageContext);
@@ -1111,17 +1113,49 @@ const MessageInputCustom = props => {
     window.requestAnimationFrame(() => inputRef.current?.focus());
   };
 
-  const handleSendMessage = async () => {
+  // Blocks a second Enter within the same event loop turn (before React has
+  // re-rendered the cleared input); released on the next frame.
+  const claimSubmit = () => {
+    if (submitLockRef.current) return false;
+    submitLockRef.current = true;
+    window.requestAnimationFrame(() => {
+      submitLockRef.current = false;
+    });
+    return true;
+  };
+
+  // The composer clears at once and sends run one after another, so the agent
+  // can keep typing while earlier messages are still going out in order.
+  const enqueueSend = (text, send, context = {}) => {
+    const sendTicketId = ticketId;
+    sendQueueRef.current = sendQueueRef.current.then(async () => {
+      try {
+        await send();
+      } catch (err) {
+        toastError(err);
+        if (currentTicketIdRef.current !== sendTicketId) {
+          const draftKey = "messageDraft-" + sendTicketId;
+          if (!sessionStorage.getItem(draftKey)) {
+            sessionStorage.setItem(draftKey, text);
+          }
+          return;
+        }
+        setInputMessage(current => current || text);
+        if (context.replyingMessage) {
+          setReplyingMessage(current => current || context.replyingMessage);
+        }
+        if (context.editingMessage) {
+          setEditingMessage(current => current || context.editingMessage);
+        }
+      }
+    });
+  };
+
+  const handleSendMessage = () => {
     const text = inputMessage.trim();
-    if (
-      text === "" ||
-      ticketStatus === "closed" ||
-      messageSendInFlightRef.current
-    ) {
+    if (text === "" || ticketStatus === "closed" || !claimSubmit()) {
       return;
     }
-
-    messageSendInFlightRef.current = true;
 
     const message = {
       read: 1,
@@ -1133,50 +1167,46 @@ const MessageInputCustom = props => {
       quotedMsg: replyingMessage
     };
 
-    handlePresenceUpdate(null);
-
     const url =
       editingMessage !== null
         ? `/messages/edit/${editingMessage.id}`
         : `/messages/${ticketId}`;
-    try {
-      await api.post(url, message);
-      setInputMessage("");
-      setShowEmoji(false);
-      setReplyingMessage(null);
-      setEditingMessage(null);
-      setSignMessage(true);
-    } catch (err) {
-      toastError(err);
-    } finally {
-      messageSendInFlightRef.current = false;
-      focusMessageInput();
-    }
+
+    handlePresenceUpdate(null);
+    setInputMessage("");
+    setShowEmoji(false);
+    setReplyingMessage(null);
+    setEditingMessage(null);
+    focusMessageInput();
+
+    enqueueSend(
+      text,
+      async () => {
+        await api.post(url, message);
+        setSignMessage(true);
+      },
+      { replyingMessage, editingMessage }
+    );
   };
 
-  const handleSendInternalNote = async () => {
+  const handleSendInternalNote = () => {
     const note = inputMessage.trim();
-    if (!note || noteSendInFlightRef.current) return;
+    if (!note || !claimSubmit()) return;
 
-    noteSendInFlightRef.current = true;
-    try {
-      await api.post("/ticket-notes", {
-        note: `${user?.name || "Agente"}:\n${note}`,
-        ticketId,
-        contactId: ticket.contactId || ticket.contact?.id
-      });
+    const payload = {
+      note: `${user?.name || "Agente"}:\n${note}`,
+      ticketId,
+      contactId: ticket.contactId || ticket.contact?.id
+    };
 
-      handlePresenceUpdate(null);
-      setInputMessage("");
-      setShowEmoji(false);
-      setReplyingMessage(null);
-      setEditingMessage(null);
-      inputRef.current.focus();
-    } catch (err) {
-      toastError(err);
-    } finally {
-      noteSendInFlightRef.current = false;
-    }
+    handlePresenceUpdate(null);
+    setInputMessage("");
+    setShowEmoji(false);
+    setReplyingMessage(null);
+    setEditingMessage(null);
+    focusMessageInput();
+
+    enqueueSend(note, () => api.post("/ticket-notes", payload));
   };
 
   const handleStartRecording = async () => {
