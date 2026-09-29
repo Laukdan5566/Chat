@@ -56,6 +56,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSignature } from "@fortawesome/free-solid-svg-icons";
 import { isMobile } from "../../helpers/isMobile";
 import { SocketContext } from "../../context/Socket/SocketContext";
+import { OptimisticMessagesContext } from "../../context/OptimisticMessages/OptimisticMessagesContext";
+import { v4 as uuidv4 } from "uuid";
 
 const Mp3Recorder = new MicRecorder({ bitRate: 128 });
 
@@ -905,13 +907,13 @@ const MessageInputCustom = props => {
 
   const inputRef = useRef();
   const mediaUploadInFlightRef = useRef(false);
-  const submitLockRef = useRef(false);
   const sendQueueRef = useRef(Promise.resolve());
   const currentTicketIdRef = useRef(ticketId);
   currentTicketIdRef.current = ticketId;
   const { setReplyingMessage, replyingMessage } =
     useContext(ReplyMessageContext);
   const { setEditingMessage, editingMessage } = useContext(EditMessageContext);
+  const { emit: emitOptimistic } = useContext(OptimisticMessagesContext);
   const { user } = useContext(AuthContext);
 
   const [signMessage, setSignMessage] = useLocalStorage("signOption", true);
@@ -1113,19 +1115,6 @@ const MessageInputCustom = props => {
     window.requestAnimationFrame(() => inputRef.current?.focus());
   };
 
-  // Blocks a second submit within the same event loop turn (before React has
-  // re-rendered the cleared input). Released with a timer rather than
-  // requestAnimationFrame, which never fires while the window isn't painting
-  // and would leave Enter stuck.
-  const claimSubmit = () => {
-    if (submitLockRef.current) return false;
-    submitLockRef.current = true;
-    setTimeout(() => {
-      submitLockRef.current = false;
-    }, 0);
-    return true;
-  };
-
   // The composer clears at once and sends run one after another, so the agent
   // can keep typing while earlier messages are still going out in order.
   const enqueueSend = (text, send, context = {}) => {
@@ -1135,6 +1124,9 @@ const MessageInputCustom = props => {
         await send();
       } catch (err) {
         toastError(err);
+        if (context.onFail) {
+          context.onFail();
+        }
         if (currentTicketIdRef.current !== sendTicketId) {
           const draftKey = "messageDraft-" + sendTicketId;
           if (!sessionStorage.getItem(draftKey)) {
@@ -1154,8 +1146,10 @@ const MessageInputCustom = props => {
   };
 
   const handleSendMessage = () => {
+    // A repeated Enter is harmless: React commits the cleared input before the
+    // next key event, so it finds the composer empty.
     const text = inputMessage.trim();
-    if (text === "" || ticketStatus === "closed" || !claimSubmit()) {
+    if (text === "" || ticketStatus === "closed") {
       return;
     }
 
@@ -1169,10 +1163,35 @@ const MessageInputCustom = props => {
       quotedMsg: replyingMessage
     };
 
-    const url =
-      editingMessage !== null
-        ? `/messages/edit/${editingMessage.id}`
-        : `/messages/${ticketId}`;
+    const isEdit = editingMessage !== null;
+    const url = isEdit
+      ? `/messages/edit/${editingMessage.id}`
+      : `/messages/${ticketId}`;
+
+    // Show the bubble right away (with the clock icon); MessagesList swaps it
+    // for the real message when the socket delivers it.
+    const pendingId = isEdit ? null : `pending-${uuidv4()}`;
+    if (pendingId) {
+      emitOptimistic({
+        type: "add",
+        ticketId,
+        message: {
+          id: pendingId,
+          pending: true,
+          ticketId,
+          fromMe: true,
+          read: true,
+          ack: 0,
+          body: message.body,
+          mediaType: "chat",
+          channel: ticket.channel,
+          quotedMsg: replyingMessage,
+          dataJson: JSON.stringify({ message: { conversation: message.body } }),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      });
+    }
 
     handlePresenceUpdate(null);
     setInputMessage("");
@@ -1186,14 +1205,25 @@ const MessageInputCustom = props => {
       async () => {
         await api.post(url, message);
         setSignMessage(true);
+        if (pendingId) {
+          emitOptimistic({ type: "sent", ticketId, id: pendingId });
+        }
       },
-      { replyingMessage, editingMessage }
+      {
+        replyingMessage,
+        editingMessage,
+        onFail: () => {
+          if (pendingId) {
+            emitOptimistic({ type: "failed", ticketId, id: pendingId });
+          }
+        }
+      }
     );
   };
 
   const handleSendInternalNote = () => {
     const note = inputMessage.trim();
-    if (!note || !claimSubmit()) return;
+    if (!note) return;
 
     const payload = {
       note: `${user?.name || "Agente"}:\n${note}`,

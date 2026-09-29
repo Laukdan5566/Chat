@@ -55,6 +55,7 @@ import MediaGalleryLightbox, {
 import api from "../../services/api";
 import toastError from "../../errors/toastError";
 import { SocketContext } from "../../context/Socket/SocketContext";
+import { OptimisticMessagesContext } from "../../context/OptimisticMessages/OptimisticMessagesContext";
 import { i18n } from "../../translate/i18n";
 import vCard from "vcard-parser";
 import { generateColor } from "../../helpers/colorGenerator";
@@ -715,9 +716,16 @@ const reducer = (state, action) => {
   if (action.type === "ADD_MESSAGE") {
     const newMessage = action.payload;
     const messageIndex = state.findIndex(m => m.id === newMessage.id);
+    const pendingIndex =
+      messageIndex === -1 && newMessage.fromMe
+        ? findPendingMatch(state, newMessage)
+        : -1;
 
     if (messageIndex !== -1) {
       state[messageIndex] = newMessage;
+    } else if (pendingIndex !== -1) {
+      // The confirmed message takes the optimistic bubble's place.
+      state[pendingIndex] = newMessage;
     } else {
       state.push(newMessage);
     }
@@ -775,9 +783,36 @@ const reducer = (state, action) => {
     return changed ? [...state] : state;
   }
 
+  if (action.type === "ADD_PENDING_MESSAGE") {
+    return [...state, action.payload];
+  }
+
+  if (action.type === "MARK_PENDING_SENT") {
+    return state.map(m =>
+      m.id === action.payload && m.pending ? { ...m, ack: 1 } : m
+    );
+  }
+
+  if (action.type === "REMOVE_PENDING_MESSAGE") {
+    return state.filter(m => m.id !== action.payload);
+  }
+
   if (action.type === "RESET") {
     return [];
   }
+};
+
+// Pairs a confirmed outgoing message with the optimistic bubble it replaces.
+// Bodies normally match exactly; the backend only differs when it expands
+// template variables, so a plain-text message then takes the oldest bubble.
+const findPendingMatch = (state, message) => {
+  const byBody = state.findIndex(m => m.pending && m.body === message.body);
+  if (byBody !== -1) return byBody;
+
+  const isPlainText =
+    !message.mediaUrl &&
+    !["internalNote", "reactionMessage"].includes(message.mediaType);
+  return isPlainText ? state.findIndex(m => m.pending) : -1;
 };
 
 const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
@@ -807,6 +842,28 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
   const [contactPresence, setContactPresence] = useState("available");
 
   const socketManager = useContext(SocketContext);
+  const { subscribe: subscribeOptimistic } = useContext(
+    OptimisticMessagesContext
+  );
+
+  useEffect(
+    () =>
+      subscribeOptimistic(event => {
+        if (event.ticketId !== currentTicketId.current) return;
+
+        if (event.type === "add") {
+          dispatch({ type: "ADD_PENDING_MESSAGE", payload: event.message });
+          // Emitted from a key handler, so wait for the bubble to render.
+          setTimeout(scrollToBottom, 0);
+        } else if (event.type === "sent") {
+          dispatch({ type: "MARK_PENDING_SENT", payload: event.id });
+        } else if (event.type === "failed") {
+          dispatch({ type: "REMOVE_PENDING_MESSAGE", payload: event.id });
+        }
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [subscribeOptimistic]
+  );
 
   function loadData(incrementPage = false) {
     setLoading(true);
@@ -939,6 +996,7 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
     const hasPendingOwnAck = messagesList.some(
       message =>
         message.fromMe &&
+        !message.pending &&
         message.channel !== "webchat" &&
         Number(message.ack) >= 0 &&
         Number(message.ack) < 3
@@ -1870,7 +1928,7 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
               ]}
               title={message.queueId && message.queue?.name}
             >
-              {readOnly || message.isContactHistory || (
+              {readOnly || message.isContactHistory || message.pending || (
                 <IconButton
                   variant="contained"
                   size="small"
@@ -1989,7 +2047,7 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
               ]}
               title={message.queueId && message.queue?.name}
             >
-              {readOnly || message.isContactHistory || (
+              {readOnly || message.isContactHistory || message.pending || (
                 <IconButton
                   variant="contained"
                   size="small"

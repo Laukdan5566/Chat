@@ -15,6 +15,7 @@ import MessagesList from "../MessagesList";
 import api from "../../services/api";
 import { ReplyMessageProvider } from "../../context/ReplyingMessage/ReplyingMessageContext";
 import { EditMessageProvider } from "../../context/EditingMessage/EditingMessageContext";
+import { OptimisticMessagesProvider } from "../../context/OptimisticMessages/OptimisticMessagesContext";
 import toastError from "../../errors/toastError";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import { TagsContainer } from "../TagsContainer";
@@ -268,7 +269,11 @@ const Ticket = () => {
           />
         </Paper>
         <ReplyMessageProvider>
-          <EditMessageProvider>{renderMessagesList()}</EditMessageProvider>
+          <EditMessageProvider>
+            <OptimisticMessagesProvider>
+              {renderMessagesList()}
+            </OptimisticMessagesProvider>
+          </EditMessageProvider>
         </ReplyMessageProvider>
       </Paper>
       <ContactDrawer
