@@ -219,16 +219,12 @@ const TicketListItemCustom = ({ ticket, setTabOpen, groupActionButtons }) => {
     history.push(`/tickets/`);
   };
 
-  const handleAcceptTicket = async (id, queueId) => {
+  const handleAcceptTicket = async id => {
     try {
       const ticketData = {
         status: "open",
         userId: user?.id
       };
-
-      if (queueId) {
-        ticketData.queueId = queueId;
-      }
 
       const { data: acceptedTicket } = await api.put(`/tickets/${id}`, ticketData);
       const acceptedTicketUuid = acceptedTicket?.uuid || ticket.uuid;
@@ -261,6 +257,20 @@ const TicketListItemCustom = ({ ticket, setTabOpen, groupActionButtons }) => {
     } catch (err) {
       toastError(err);
       return;
+    }
+  };
+
+  const handleTransferToQueue = async (id, queueId) => {
+    try {
+      // Only moves the queue, keeps the ticket pending and unassigned, so no
+      // "accepted" message goes out — this is a routing fix, not an accept.
+      await api.put(`/tickets/${id}`, {
+        status: "pending",
+        userId: null,
+        queueId
+      });
+    } catch (err) {
+      toastError(err);
     }
   };
 
@@ -454,7 +464,7 @@ const TicketListItemCustom = ({ ticket, setTabOpen, groupActionButtons }) => {
           {ticket.status === "pending" &&
             (groupActionButtons || !ticket.isGroup) &&
             userQueues.length > 0 && (
-              <Tooltip title="Aceitar em uma fila">
+              <Tooltip title="Transferir para fila">
                 <LowPriorityIcon
                   onClick={handleOpenQueueMenu}
                   fontSize="small"
@@ -571,7 +581,7 @@ const TicketListItemCustom = ({ ticket, setTabOpen, groupActionButtons }) => {
             onClick={e => {
               e.stopPropagation();
               handleCloseQueueMenu(e);
-              handleAcceptTicket(ticket.id, queue.id);
+              handleTransferToQueue(ticket.id, queue.id);
             }}
           >
             {queue.name}
