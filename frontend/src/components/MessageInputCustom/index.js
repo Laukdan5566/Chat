@@ -1113,14 +1113,16 @@ const MessageInputCustom = props => {
     window.requestAnimationFrame(() => inputRef.current?.focus());
   };
 
-  // Blocks a second Enter within the same event loop turn (before React has
-  // re-rendered the cleared input); released on the next frame.
+  // Blocks a second submit within the same event loop turn (before React has
+  // re-rendered the cleared input). Released with a timer rather than
+  // requestAnimationFrame, which never fires while the window isn't painting
+  // and would leave Enter stuck.
   const claimSubmit = () => {
     if (submitLockRef.current) return false;
     submitLockRef.current = true;
-    window.requestAnimationFrame(() => {
+    setTimeout(() => {
       submitLockRef.current = false;
-    });
+    }, 0);
     return true;
   };
 

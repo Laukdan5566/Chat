@@ -437,10 +437,7 @@
 
         if (progress >= 100) {
           clearInterval(interval);
-          setTimeout(() => {
-            const splashScreen = document.getElementById("splash-background");
-            splashScreen.remove();
-          }, 500);
+          setTimeout(window.dismissSplash, 500);
         }
       }, 1000);
       window.finishProgress = () => {
