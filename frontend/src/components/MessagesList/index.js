@@ -4,7 +4,9 @@ import React, {
   useReducer,
   useRef,
   useContext,
-  useMemo
+  useMemo,
+  lazy,
+  Suspense
 } from "react";
 
 import { isSameDay, parseISO, format } from "date-fns";
@@ -43,7 +45,6 @@ import {
 } from "@material-ui/icons";
 
 import WhatsMarked from "react-whatsmarked";
-import PdfPreview from "../PdfPreview";
 import MessageOptionsMenu from "../MessageOptionsMenu";
 import whatsBackground from "../../assets/wa-background.png";
 import whatsBackgroundDark from "../../assets/wa-background-dark.png";
@@ -62,6 +63,10 @@ import { downloadFile } from "../../helpers/downloadFile";
 import { Mutex } from "async-mutex";
 
 const loadPageMutex = new Mutex();
+
+// pdf.js (with its worker) is the single heaviest dependency; only fetch it
+// when a PDF actually shows up in a conversation.
+const PdfPreview = lazy(() => import("../PdfPreview"));
 
 const useStyles = makeStyles(theme => ({
   messageContainer: {
@@ -806,34 +811,29 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
   function loadData(incrementPage = false) {
     setLoading(true);
     const thisPageNumber = incrementPage ? pageNumber + 1 : 1;
-    const delayDebounceFn = setTimeout(() => {
-      const fetchMessages = async () => {
-        if (ticketId === undefined) return;
-        try {
-          const { data } = await api.get("/messages/" + ticketId, {
-            params: { pageNumber: thisPageNumber, markAsRead }
-          });
+    const fetchMessages = async () => {
+      if (ticketId === undefined) return;
+      try {
+        const { data } = await api.get("/messages/" + ticketId, {
+          params: { pageNumber: thisPageNumber, markAsRead }
+        });
 
-          if (currentTicketId.current === ticketId) {
-            dispatch({ type: "LOAD_MESSAGES", payload: data.messages });
-            setHasMore(data.hasMore);
-            setLoading(false);
-          }
-
-          if (thisPageNumber === 1 && data.messages.length > 1) {
-            scrollToBottom();
-          }
-        } catch (err) {
+        if (currentTicketId.current === ticketId) {
+          dispatch({ type: "LOAD_MESSAGES", payload: data.messages });
+          setHasMore(data.hasMore);
           setLoading(false);
-          toastError(err);
         }
-      };
-      fetchMessages();
-      setPageNumber(thisPageNumber);
-    }, 500);
-    return () => {
-      clearTimeout(delayDebounceFn);
+
+        if (thisPageNumber === 1 && data.messages.length > 1) {
+          scrollToBottom();
+        }
+      } catch (err) {
+        setLoading(false);
+        toastError(err);
+      }
     };
+    fetchMessages();
+    setPageNumber(thisPageNumber);
   }
 
   async function refreshPendingAcks() {
@@ -1249,7 +1249,9 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
       return (
         <>
           {isPdf && message.mediaUrl && (
-            <PdfPreview url={message.mediaUrl} fileName={fileName} />
+            <Suspense fallback={null}>
+              <PdfPreview url={message.mediaUrl} fileName={fileName} />
+            </Suspense>
           )}
           <div className={classes.downloadMedia}>
             <Button

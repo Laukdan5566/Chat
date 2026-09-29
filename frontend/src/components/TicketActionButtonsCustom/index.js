@@ -24,7 +24,6 @@ import Tooltip from "@material-ui/core/Tooltip";
 import { green } from "@material-ui/core/colors";
 import { PhoneCallContext } from "../../context/PhoneCall/PhoneCallContext";
 import { wavoipAvailable, wavoipCall } from "../../helpers/wavoipCallManager";
-import { toBeChecked } from "@testing-library/jest-dom/matchers";
 
 const useStyles = makeStyles(theme => ({
   actionButtons: {

@@ -108,42 +108,46 @@ const Ticket = () => {
   }, []);
 
   useEffect(() => {
+    // Ignore responses for a ticket the agent already switched away from.
+    let stale = false;
     setLoading(true);
-    const delayDebounceFn = setTimeout(() => {
-      const fetchTicket = async () => {
-        try {
-          const { data } = await api.get("/tickets/u/" + ticketId);
-          const { queueId } = data;
-          const { queues, profile } = user;
+    const fetchTicket = async () => {
+      try {
+        const { data } = await api.get("/tickets/u/" + ticketId);
+        if (stale) return;
+        const { queueId } = data;
+        const { queues, profile } = user;
 
-          const queueAllowed = queues.find(q => q.id === queueId);
-          const isParticipant = data.participants?.some(
-            participant => participant.id === user.id
-          );
-          const canViewAsParticipant =
-            isParticipant && hasUserPermission(user, "ticket-participants:view");
+        const queueAllowed = queues.find(q => q.id === queueId);
+        const isParticipant = data.participants?.some(
+          participant => participant.id === user.id
+        );
+        const canViewAsParticipant =
+          isParticipant && hasUserPermission(user, "ticket-participants:view");
 
-          if (
-            queueAllowed === undefined &&
-            profile !== "admin" &&
-            !canViewAsParticipant
-          ) {
-            toast.error("Acesso não permitido");
-            history.push("/tickets");
-            return;
-          }
-
-          setContact(data.contact);
-          setTicket(data);
-          setLoading(false);
-        } catch (err) {
-          setLoading(false);
-          toastError(err);
+        if (
+          queueAllowed === undefined &&
+          profile !== "admin" &&
+          !canViewAsParticipant
+        ) {
+          toast.error("Acesso não permitido");
+          history.push("/tickets");
+          return;
         }
-      };
-      fetchTicket();
-    }, 500);
-    return () => clearTimeout(delayDebounceFn);
+
+        setContact(data.contact);
+        setTicket(data);
+        setLoading(false);
+      } catch (err) {
+        if (stale) return;
+        setLoading(false);
+        toastError(err);
+      }
+    };
+    fetchTicket();
+    return () => {
+      stale = true;
+    };
   }, [ticketId, user, history]);
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, lazy, Suspense } from "react";
 import { useHistory } from "react-router-dom";
 import clsx from "clsx";
 import {
@@ -23,7 +23,6 @@ import CachedIcon from "@material-ui/icons/Cached";
 
 import MainListItems from "./MainListItems";
 import NotificationsPopOver from "../components/NotificationsPopOver";
-import { Backendlogs } from "../components/Backendlogs";
 import { PhoneCall } from "../components/PhoneCall";
 import NotificationsVolume from "../components/NotificationsVolume";
 import UserModal from "../components/UserModal";
@@ -52,6 +51,12 @@ import GoogleAnalytics from "../components/GoogleAnalytics";
 import OnlyForSuperUser from "../components/OnlyForSuperUser";
 import NewTicketModal from "../components/NewTicketModal/index.js";
 import { registerNativePushNotifications } from "../helpers/nativePushNotifications";
+
+const Backendlogs = lazy(() =>
+  import("../components/Backendlogs").then(module => ({
+    default: module.Backendlogs
+  }))
+);
 
 const drawerWidth = 240;
 const DRAWER_STORAGE_KEY = "drawerOpen";
@@ -532,7 +537,11 @@ const LoggedInLayout = ({ children, themeToggle }) => {
             className={classes.title}
           />
 
-          {canAccessBackendlogs && <Backendlogs />}
+          {canAccessBackendlogs && (
+            <Suspense fallback={null}>
+              <Backendlogs />
+            </Suspense>
+          )}
 
           <PhoneCall />
 
