@@ -66,7 +66,10 @@ function renderApp() {
   );
 }
 
-function probeBackendAndRender(config, attempt = 1) {
+// Runs in the background after the app is already on screen: only surfaces
+// an overlay (via window.renderError) when something is actually wrong,
+// instead of gating the whole app behind this network round trip.
+function checkBackendHealth(config) {
   const backendUrl = `${getBackendProbeUrl(config)}?cb=${Date.now()}`;
 
   axios
@@ -86,12 +89,13 @@ function probeBackendAndRender(config, attempt = 1) {
         return;
       }
 
-      renderApp();
+      clearBackendRetryTimers();
+      window.dismissSplash();
     })
     .catch(error => {
       const retryMessage = getRetryMessage(error);
       showRetryProgress(retryMessage, () => {
-        probeBackendAndRender(config, attempt + 1);
+        checkBackendHealth(config);
       });
     });
 }
@@ -101,5 +105,6 @@ const config = loadJSON("/config.json");
 if (!config) {
   window.renderError(i18n.t("frontendErrors.ERR_CONFIG_ERROR"));
 } else {
-  probeBackendAndRender(config);
+  renderApp();
+  checkBackendHealth(config);
 }
