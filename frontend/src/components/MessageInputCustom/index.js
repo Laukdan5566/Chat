@@ -906,6 +906,7 @@ const MessageInputCustom = props => {
   const inputRef = useRef();
   const mediaUploadInFlightRef = useRef(false);
   const messageSendInFlightRef = useRef(false);
+  const noteSendInFlightRef = useRef(false);
   const { setReplyingMessage, replyingMessage } =
     useContext(ReplyMessageContext);
   const { setEditingMessage, editingMessage } = useContext(EditMessageContext);
@@ -1121,7 +1122,6 @@ const MessageInputCustom = props => {
     }
 
     messageSendInFlightRef.current = true;
-    setLoading(true);
 
     const message = {
       read: 1,
@@ -1150,16 +1150,15 @@ const MessageInputCustom = props => {
       toastError(err);
     } finally {
       messageSendInFlightRef.current = false;
-      setLoading(false);
       focusMessageInput();
     }
   };
 
   const handleSendInternalNote = async () => {
     const note = inputMessage.trim();
-    if (!note) return;
+    if (!note || noteSendInFlightRef.current) return;
 
-    setLoading(true);
+    noteSendInFlightRef.current = true;
     try {
       await api.post("/ticket-notes", {
         note: `${user?.name || "Agente"}:\n${note}`,
@@ -1176,7 +1175,7 @@ const MessageInputCustom = props => {
     } catch (err) {
       toastError(err);
     } finally {
-      setLoading(false);
+      noteSendInFlightRef.current = false;
     }
   };
 
