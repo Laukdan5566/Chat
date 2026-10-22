@@ -1120,6 +1120,8 @@ const messages = {
         }
       },
       messageOptionsMenu: {
+        copy: "Copy",
+        copied: "Message copied",
         delete: "Delete",
         edit: "Edit",
         forward: "Forward",

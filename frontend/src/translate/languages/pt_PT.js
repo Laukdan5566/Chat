@@ -1025,6 +1025,8 @@ const messages = {
         }
       },
       messageOptionsMenu: {
+        copy: "Copiar",
+        copied: "Mensagem copiada",
         delete: "Eliminar",
         edit: "Editar",
         history: "Histórico",

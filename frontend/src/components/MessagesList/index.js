@@ -837,6 +837,7 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [previewVideoPlayingById, setPreviewVideoPlayingById] = useState({});
   const [anchorEl, setAnchorEl] = useState(null);
+  const [anchorPosition, setAnchorPosition] = useState(null);
   const messageOptionsMenuOpen = Boolean(anchorEl);
   const currentTicketId = useRef(ticketId);
   const [contactPresence, setContactPresence] = useState("available");
@@ -1102,6 +1103,22 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
 
   const handleOpenMessageOptionsMenu = (e, message, data) => {
     setAnchorEl(e.currentTarget);
+    setAnchorPosition(null);
+    setSelectedMessage(message);
+    setSelectedMessageData(data);
+  };
+
+  // Right-click on a bubble opens the same menu at the cursor, like WhatsApp.
+  // Keeps the browser menu when text is selected or a link was clicked.
+  const handleMessageContextMenu = (e, message, data) => {
+    if (readOnly || message.isContactHistory || message.pending) return;
+    if (message.isDeleted) return;
+    if (window.getSelection()?.toString()) return;
+    if (e.target.closest("a")) return;
+
+    e.preventDefault();
+    setAnchorEl(e.currentTarget);
+    setAnchorPosition({ top: e.clientY, left: e.clientX });
     setSelectedMessage(message);
     setSelectedMessageData(data);
   };
@@ -1927,6 +1944,7 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
                 })
               ]}
               title={message.queueId && message.queue?.name}
+              onContextMenu={e => handleMessageContextMenu(e, message, data)}
             >
               {readOnly || message.isContactHistory || message.pending || (
                 <IconButton
@@ -2046,6 +2064,7 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
                 })
               ]}
               title={message.queueId && message.queue?.name}
+              onContextMenu={e => handleMessageContextMenu(e, message, data)}
             >
               {readOnly || message.isContactHistory || message.pending || (
                 <IconButton
@@ -2163,6 +2182,7 @@ const MessagesList = ({ ticket, ticketId, isGroup, markAsRead, readOnly }) => {
         message={selectedMessage}
         data={selectedMessageData}
         anchorEl={anchorEl}
+        anchorPosition={anchorPosition}
         menuOpen={messageOptionsMenuOpen}
         handleClose={handleCloseMessageOptionsMenu}
       />

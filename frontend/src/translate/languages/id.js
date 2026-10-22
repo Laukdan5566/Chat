@@ -994,6 +994,8 @@ const messages = {
         }
       },
       messageOptionsMenu: {
+        copy: "Salin",
+        copied: "Pesan disalin",
         delete: "Hapus",
         edit: "Edit",
         forward: "Teruskan",

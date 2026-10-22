@@ -1124,6 +1124,8 @@ const messages = {
         }
       },
       messageOptionsMenu: {
+        copy: "Copiar",
+        copied: "Mensagem copiada",
         delete: "Deletar",
         edit: "Editar",
         forward: "Encaminhar",

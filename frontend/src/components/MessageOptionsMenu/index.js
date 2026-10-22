@@ -2,6 +2,16 @@ import React, { useState, useContext } from "react";
 import PropTypes from "prop-types";
 
 import MenuItem from "@material-ui/core/MenuItem";
+import ListItemIcon from "@material-ui/core/ListItemIcon";
+import {
+  Reply,
+  FileCopyOutlined,
+  Forward,
+  EditOutlined,
+  History,
+  DeleteOutline
+} from "@material-ui/icons";
+import { toast } from "react-toastify";
 
 import { i18n } from "../../translate/i18n";
 import api from "../../services/api";
@@ -24,7 +34,8 @@ const MessageOptionsMenu = ({
   data,
   menuOpen,
   handleClose,
-  anchorEl
+  anchorEl,
+  anchorPosition
 }) => {
   const classes = useStyles();
   const { setReplyingMessage } = useContext(ReplyMessageContext);
@@ -94,7 +105,18 @@ const MessageOptionsMenu = ({
     closeMenu();
   };
 
+  const handleCopyMessage = async () => {
+    closeMenu();
+    try {
+      await navigator.clipboard.writeText(message.body);
+      toast.success(i18n.t("messageOptionsMenu.copied"));
+    } catch (err) {
+      toastError(err);
+    }
+  };
+
   const isSticker = data?.message && "stickerMessage" in data.message;
+  const canCopy = !!message.body && !message.mediaUrl && !message.isDeleted;
 
   return (
     <>
@@ -127,6 +149,8 @@ const MessageOptionsMenu = ({
       </Dialog>
       <Menu
         anchorEl={anchorEl}
+        anchorReference={anchorPosition ? "anchorPosition" : "anchorEl"}
+        anchorPosition={anchorPosition || undefined}
         getContentAnchorEl={null}
         anchorOrigin={{
           vertical: "bottom",
@@ -134,8 +158,9 @@ const MessageOptionsMenu = ({
         }}
         transformOrigin={{
           vertical: "top",
-          horizontal: "right"
+          horizontal: anchorPosition ? "left" : "right"
         }}
+        classes={{ paper: classes.menuPaper }}
         open={menuOpen}
         onClose={closeMenu}
       >
@@ -147,34 +172,61 @@ const MessageOptionsMenu = ({
                 onClick={() => handleReact(emoji)}
                 key={index}
               >
-                <span style={{ fontSize: "1rem" }}>{emoji}</span>
+                {emoji}
               </div>
             ))}
             <div className={classes.emojiButton} onClick={openEmoji}>
-              <span style={{ fontSize: "1rem" }}>+</span>
+              +
             </div>
           </div>
-          {message.fromMe && [
-            <MenuItem key="delete" onClick={handleOpenConfirmationModal}>
-              {i18n.t("messageOptionsMenu.delete")}
-            </MenuItem>,
-            !isSticker && (
-              <MenuItem key="edit" onClick={handleEditMessage}>
-                {i18n.t("messageOptionsMenu.edit")}
-              </MenuItem>
-            )
-          ]}
+          <MenuItem onClick={handleReplyMessage}>
+            <ListItemIcon className={classes.menuIcon}>
+              <Reply fontSize="small" />
+            </ListItemIcon>
+            {i18n.t("messageOptionsMenu.reply")}
+          </MenuItem>
+          {canCopy && (
+            <MenuItem key="copy" onClick={handleCopyMessage}>
+              <ListItemIcon className={classes.menuIcon}>
+                <FileCopyOutlined fontSize="small" />
+              </ListItemIcon>
+              {i18n.t("messageOptionsMenu.copy")}
+            </MenuItem>
+          )}
+          <MenuItem key="forward" onClick={handleOpenForwardModal}>
+            <ListItemIcon className={classes.menuIcon}>
+              <Forward fontSize="small" />
+            </ListItemIcon>
+            {i18n.t("messageOptionsMenu.forward")}
+          </MenuItem>
+          {message.fromMe && !isSticker && (
+            <MenuItem key="edit" onClick={handleEditMessage}>
+              <ListItemIcon className={classes.menuIcon}>
+                <EditOutlined fontSize="small" />
+              </ListItemIcon>
+              {i18n.t("messageOptionsMenu.edit")}
+            </MenuItem>
+          )}
           {!isSticker && message.oldMessages?.length > 0 && (
             <MenuItem key="history" onClick={handleOpenMessageHistoryModal}>
+              <ListItemIcon className={classes.menuIcon}>
+                <History fontSize="small" />
+              </ListItemIcon>
               {i18n.t("messageOptionsMenu.history")}
             </MenuItem>
           )}
-          <MenuItem onClick={handleReplyMessage}>
-            {i18n.t("messageOptionsMenu.reply")}
-          </MenuItem>
-          <MenuItem key="forward" onClick={handleOpenForwardModal}>
-            {i18n.t("messageOptionsMenu.forward")}
-          </MenuItem>
+          {message.fromMe && (
+            <MenuItem
+              key="delete"
+              className={classes.dangerItem}
+              onClick={handleOpenConfirmationModal}
+            >
+              <ListItemIcon className={classes.menuIcon}>
+                <DeleteOutline fontSize="small" />
+              </ListItemIcon>
+              {i18n.t("messageOptionsMenu.delete")}
+            </MenuItem>
+          )}
         </div>
       </Menu>
     </>
@@ -185,7 +237,8 @@ MessageOptionsMenu.propTypes = {
   message: PropTypes.object,
   menuOpen: PropTypes.bool.isRequired,
   handleClose: PropTypes.func.isRequired,
-  anchorEl: PropTypes.object
+  anchorEl: PropTypes.object,
+  anchorPosition: PropTypes.object
 };
 
 export default MessageOptionsMenu;

@@ -965,6 +965,8 @@ const messages = {
         }
       },
       messageOptionsMenu: {
+        copy: "Copia",
+        copied: "Messaggio copiato",
         delete: "Elimina",
         edit: "Modifica",
         history: "Cronologia",
