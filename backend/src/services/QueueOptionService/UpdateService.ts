@@ -15,7 +15,9 @@ const UpdateService = async (
 ): Promise<QueueOption> => {
   const queueOption = await ShowService(queueOptionId);
 
-  await queueOption.update(queueOptionData);
+  // mediaPath/mediaName só mudam pelo upload de mídia; id não se troca
+  const { mediaPath, mediaName, id, ...safeData } = queueOptionData as any;
+  await queueOption.update(safeData);
 
   return queueOption;
 };

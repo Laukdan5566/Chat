@@ -156,7 +156,9 @@ export const deleteMedia = async (
   try {
     const queue = await QueueOption.findByPk(queueOptionId);
     const filePath = path.resolve("public", queue.mediaPath);
-    const fileExists = fs.existsSync(filePath);
+    const fileExists =
+      filePath.startsWith(path.resolve("public") + path.sep) &&
+      fs.existsSync(filePath);
     if (fileExists) {
       fs.unlinkSync(filePath);
     }

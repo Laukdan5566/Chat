@@ -1619,8 +1619,11 @@ export const startQueue = async (
   if (queue.mediaPath !== null && queue.mediaPath !== "") {
     filePath = path.resolve("public", queue.mediaPath);
 
-    // check if file not exists
-    if (!fs.existsSync(filePath)) {
+    // check if file not exists (ou fora da pasta pública)
+    if (
+      !filePath.startsWith(path.resolve("public") + path.sep) ||
+      !fs.existsSync(filePath)
+    ) {
       filePath = null;
     }
   }
@@ -1958,7 +1961,10 @@ const handleChartbot = async (
     let optionsMsg = null;
     if (currentOption.mediaPath !== null && currentOption.mediaPath !== "") {
       filePath = path.resolve("public", currentOption.mediaPath);
-      if (!fs.existsSync(filePath)) {
+      if (
+        !filePath.startsWith(path.resolve("public") + path.sep) ||
+        !fs.existsSync(filePath)
+      ) {
         filePath = null;
       }
     }

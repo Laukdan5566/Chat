@@ -87,7 +87,8 @@ const CreateQueueService = async (queueData: QueueData): Promise<Queue> => {
     throw new AppError(err.message);
   }
 
-  const queue = await Queue.create({ ...queueData });
+  const { mediaPath, mediaName, ...safeData } = queueData as any;
+  const queue = await Queue.create({ ...safeData });
 
   return queue;
 };

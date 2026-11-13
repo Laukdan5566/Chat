@@ -1,6 +1,6 @@
 const m = {
   clFindOne: jest.fn(), cliFindOne: jest.fn(), invFindOne: jest.fn(), invFindByPk: jest.fn(), invFindAndCount: jest.fn(),
-  queueFindOne: jest.fn(), queueFindAll: jest.fn(), qoFindOne: jest.fn(), msgFindByPk: jest.fn()
+  queueFindOne: jest.fn(), qoCreate: jest.fn(), qoShow: jest.fn(), queueFindAll: jest.fn(), qoFindOne: jest.fn(), msgFindByPk: jest.fn()
 };
 jest.mock("../models/ContactList", () => ({ __esModule: true, default: { findOne: (...a: any[]) => m.clFindOne(...a) } }));
 jest.mock("../models/ContactListItem", () => ({ __esModule: true, default: { findOne: (...a: any[]) => m.cliFindOne(...a) } }));
@@ -12,7 +12,7 @@ jest.mock("../models/Invoices", () => ({
 jest.mock("../models/Queue", () => ({ __esModule: true, default: { findOne: (...a: any[]) => m.queueFindOne(...a), findAll: (...a: any[]) => m.queueFindAll(...a) } }));
 jest.mock("../models/QueueOption", () => ({
   __esModule: true,
-  default: { findOne: (...a: any[]) => m.qoFindOne(...a), withTopParentQueue: (o: any) => o }
+  default: { findOne: (...a: any[]) => m.qoFindOne(...a), create: (...a: any[]) => m.qoCreate(...a), withTopParentQueue: (o: any) => o }
 }));
 jest.mock("../models/Message", () => ({ __esModule: true, default: { findByPk: (...a: any[]) => m.msgFindByPk(...a) } }));
 jest.mock("../models/Ticket", () => ({ __esModule: true, default: {} }));
@@ -23,6 +23,7 @@ jest.mock("../middleware/isAuth", () => ({ __esModule: true, default: function i
 jest.mock("../middleware/isSuper", () => ({ __esModule: true, default: function isSuperMarker() {} }));
 jest.mock("../controllers/InvoicesController", () => ({ index: jest.fn(), list: jest.fn(), show: jest.fn(), update: jest.fn() }));
 jest.mock("../controllers/QueueOptionController", () => ({}));
+jest.mock("../services/QueueOptionService/ShowService", () => ({ __esModule: true, default: (...a: any[]) => m.qoShow(...a) }));
 
 /* eslint-disable import/first */
 import ContactListShow from "../services/ContactListService/ShowService";
@@ -35,6 +36,8 @@ import invoicesRoutes from "../routes/invoicesRoutes";
 import { assertQueueInCompany, assertQueueOptionInCompany } from "../services/QueueOptionService/QueueOptionScope";
 import AssociateWhatsappQueue from "../services/WhatsappService/AssociateWhatsappQueue";
 import DeleteWhatsAppMessage from "../services/WbotServices/DeleteWhatsAppMessage";
+import QueueOptionCreate from "../services/QueueOptionService/CreateService";
+import QueueOptionUpdate from "../services/QueueOptionService/UpdateService";
 /* eslint-enable import/first */
 
 describe("listas de contatos", () => {
@@ -73,6 +76,18 @@ describe("opções de fila", () => {
     await expect(assertQueueOptionInCompany(5, 1)).rejects.toMatchObject({ statusCode: 404 });
     m.qoFindOne.mockResolvedValue({ id: 5, topParentQueue: { companyId: 1 } });
     await expect(assertQueueOptionInCompany(5, 1)).resolves.toBeUndefined();
+  });
+});
+
+describe("mediaPath de opção de fila", () => {
+  it("criar e editar não aceitam mediaPath nem mediaName do corpo", async () => {
+    await QueueOptionCreate({ queueId: 1, title: "t", option: "1", mediaPath: "../../.env", mediaName: "x" } as any);
+    expect(m.qoCreate.mock.calls[0][0]).not.toHaveProperty("mediaPath");
+    expect(m.qoCreate.mock.calls[0][0]).not.toHaveProperty("mediaName");
+    const opcao: any = { update: jest.fn() };
+    m.qoShow.mockResolvedValue(opcao);
+    await QueueOptionUpdate(5, { title: "novo", mediaPath: "../../.env", id: 99 } as any);
+    expect(opcao.update.mock.calls[0][0]).toEqual({ title: "novo" });
   });
 });
 

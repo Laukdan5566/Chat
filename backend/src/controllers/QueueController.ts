@@ -158,7 +158,9 @@ export const deleteMedia = async (
     });
     if (!queue) throw new AppError("ERR_QUEUE_NOT_FOUND", 404);
     const filePath = path.resolve("public", queue.mediaPath);
-    const fileExists = fs.existsSync(filePath);
+    const fileExists =
+      filePath.startsWith(path.resolve("public") + path.sep) &&
+      fs.existsSync(filePath);
     if (fileExists) {
       fs.unlinkSync(filePath);
     }

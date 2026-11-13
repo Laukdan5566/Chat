@@ -11,7 +11,9 @@ interface QueueOptionData {
 const CreateService = async (
   queueOptionData: QueueOptionData
 ): Promise<QueueOption> => {
-  const queueOption = await QueueOption.create(queueOptionData);
+  // mediaPath/mediaName só mudam pelo upload de mídia (viram caminho de arquivo lido pelo servidor)
+  const { mediaPath, mediaName, ...safeData } = queueOptionData as any;
+  const queueOption = await QueueOption.create(safeData);
   return queueOption;
 };
 

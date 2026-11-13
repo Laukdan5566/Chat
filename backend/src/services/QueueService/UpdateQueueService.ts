@@ -76,7 +76,9 @@ const UpdateQueueService = async (
     throw new AppError("Não é permitido alterar registros de outra empresa");
   }
 
-  await queue.update(queueData);
+  // mediaPath/mediaName só mudam pelo upload de mídia; a fila não muda de empresa
+  const { mediaPath, mediaName, id, companyId: _empresa, ...safeData } = queueData as any;
+  await queue.update(safeData);
 
   return queue;
 };
