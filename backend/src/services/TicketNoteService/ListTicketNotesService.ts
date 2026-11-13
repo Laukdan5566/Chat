@@ -33,7 +33,13 @@ const ListTicketNotesService = async ({
       {
         [Op.or]: [
           { "$ticket.companyId$": companyId },
-          { "$contact.companyId$": companyId }
+          {
+            // nota sem ticket: vale a empresa do contato
+            [Op.and]: [
+              { ticketId: { [Op.or]: [null, 0] } },
+              { "$contact.companyId$": companyId }
+            ]
+          }
         ]
       }
     ]

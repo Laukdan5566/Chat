@@ -23,6 +23,11 @@ jest.mock("../services/ContactServices/ShowContactService", () => ({ __esModule:
 jest.mock("../services/ContactServices/UpdateContactService", () => ({ __esModule: true, websocketUpdateContact: jest.fn() }));
 jest.mock("../services/TicketServices/ShowTicketService", () => ({ __esModule: true, default: jest.fn() }));
 jest.mock("../services/TicketServices/UpdateTicketService", () => ({ __esModule: true, websocketUpdateTicket: jest.fn() }));
+["ListTicketNotesService", "CreateTicketNoteService", "UpdateTicketNoteService", "ShowTicketNoteService", "DeleteTicketNoteService"].forEach(n =>
+  jest.doMock(`../services/TicketNoteService/${n}`, () => ({ __esModule: true, default: jest.fn().mockResolvedValue({}) }))
+);
+jest.mock("../services/TicketNoteService/FindAllTicketNotesService", () => ({ __esModule: true, default: jest.fn() }));
+jest.mock("../services/TicketNoteService/FindNotesByContactIdAndTicketId", () => ({ __esModule: true, default: jest.fn() }));
 jest.mock("../services/MessageServices/CreateMessageService", () => ({ __esModule: true, default: jest.fn() }));
 // controllers
 jest.mock("async-mutex", () => ({ Mutex: class {} }));
@@ -40,6 +45,8 @@ jest.mock("../services/PrivacyService/UpdatePrivacyWhatsapp", () => ({ __esModul
 jest.mock("../services/WhatsappService/ShowWhatsAppService", () => ({ __esModule: true, default: jest.fn() }));
 
 /* eslint-disable import/first */
+import { update as updateNote, findFilteredList } from "../controllers/TicketNoteController";
+import UpdateTicketNoteService from "../services/TicketNoteService/UpdateTicketNoteService";
 import { assertNoteInCompany } from "../services/TicketNoteService/TicketNoteScope";
 import QmShow from "../services/QuickMessageService/ShowService";
 import QmUpdate from "../services/QuickMessageService/UpdateService";
@@ -69,6 +76,21 @@ describe("notas de ticket", () => {
     m.contactFindOne.mockResolvedValue(null);
     await expect(assertNoteInCompany(3, 1)).rejects.toMatchObject({ statusCode: 404 });
     expect(m.contactFindOne.mock.calls[0][0].where).toEqual({ id: 8, companyId: 1 });
+  });
+});
+
+describe("controller de notas", () => {
+  const res: any = { status: () => ({ json: jest.fn() }) };
+
+  it("editar usa o id da URL: um id diferente no corpo não escapa da conferência", async () => {
+    m.noteFindByPk.mockResolvedValue({ id: 3, ticketId: 5 });
+    m.ticketFindOne.mockResolvedValue({ id: 5 });
+    await updateNote({ params: { id: "3" }, body: { id: 9, note: "texto novo" }, user: { companyId: 1 } } as any, res);
+    expect((UpdateTicketNoteService as jest.Mock).mock.calls[0][0]).toMatchObject({ id: "3" });
+  });
+
+  it("listar por filtro exige ticket ou contato", async () => {
+    await expect(findFilteredList({ query: {}, user: { companyId: 1 } } as any, res)).rejects.toMatchObject({ statusCode: 400 });
   });
 });
 

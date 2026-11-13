@@ -103,9 +103,10 @@ export const update = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const ticketNote: UpdateTicketNoteData = req.body;
+  // o id da URL manda: um id diferente no corpo não pode escapar da conferência de empresa
+  const ticketNote: UpdateTicketNoteData = { ...req.body, id: req.params.id };
 
-  await assertNoteInCompany(req.params.id || ticketNote.id, req.user.companyId);
+  await assertNoteInCompany(ticketNote.id, req.user.companyId);
 
   const schema = Yup.object().shape({
     note: Yup.string()
@@ -145,6 +146,9 @@ export const findFilteredList = async (
   try {
     const { contactId, ticketId } = req.query as QueryFilteredNotes;
     const { companyId } = req.user;
+    if (!+ticketId && !+contactId) {
+      throw new AppError("ERR_NO_TICKET_OR_CONTACT", 400);
+    }
     if (+ticketId) await assertTicketInCompany(ticketId, companyId);
     if (+contactId) await assertContactInCompany(contactId, companyId);
     const notes: TicketNote[] = await FindNotesByContactIdAndTicketId({
