@@ -13,6 +13,7 @@ import UpdateSchedulesService from "../services/CompanyService/UpdateSchedulesSe
 import DeleteCompanyService from "../services/CompanyService/DeleteCompanyService";
 import FindAllCompaniesService from "../services/CompanyService/FindAllCompaniesService";
 import User from "../models/User";
+import Plan from "../models/Plan";
 
 import CheckSettings from "../helpers/CheckSettings";
 import { OpenHoursData } from "../helpers/checkOpenHours";
@@ -96,7 +97,30 @@ export const signup = async (
     }
   }
 
-  req.body.dueDate = moment().add(3, "day").format();
+  const { name, email, phone, password, planId, language } = req.body;
+
+  // cadastro público: e-mail já existente nunca move o usuário para a empresa nova
+  // (o CreateCompanyService reaproveita usuário com mesmo nome+e-mail) e só plano público vale
+  if (email && (await User.findOne({ where: { email } }))) {
+    return res.status(400).json("ERR_USER_ALREADY_EXISTS");
+  }
+
+  const plan = await Plan.findOne({ where: { id: planId, isPublic: true } });
+  if (!plan) {
+    return res.status(400).json("ERR_PLAN_NOT_AVAILABLE");
+  }
+
+  // só os campos do formulário: sem recurrence, campaignsEnabled etc. vindos do cliente
+  req.body = {
+    name,
+    email,
+    phone,
+    password,
+    planId,
+    language,
+    status: "t",
+    dueDate: moment().add(3, "day").format()
+  };
 
   return store(req, res);
 };
