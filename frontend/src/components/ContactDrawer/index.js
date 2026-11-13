@@ -15,7 +15,7 @@ import HistoryIcon from "@material-ui/icons/History";
 import { i18n } from "../../translate/i18n";
 
 import ContactDrawerSkeleton from "../ContactDrawerSkeleton";
-import WhatsMarked from "react-whatsmarked";
+import WhatsMarked from "../SafeWhatsMarked";
 import { CardHeader } from "@material-ui/core";
 import ContactModal from "../ContactModal";
 import { TicketNotes } from "../TicketNotes";

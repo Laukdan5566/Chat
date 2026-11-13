@@ -18,7 +18,7 @@ import { i18n } from "../../translate/i18n";
 
 import api from "../../services/api";
 import ButtonWithSpinner from "../ButtonWithSpinner";
-import WhatsMarked from "react-whatsmarked";
+import WhatsMarked from "../SafeWhatsMarked";
 import { Tooltip } from "@material-ui/core";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import toastError from "../../errors/toastError";

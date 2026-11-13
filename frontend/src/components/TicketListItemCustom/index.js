@@ -20,7 +20,7 @@ import { i18n } from "../../translate/i18n";
 
 import api from "../../services/api";
 import ButtonWithSpinner from "../ButtonWithSpinner";
-import WhatsMarked from "react-whatsmarked";
+import WhatsMarked from "../SafeWhatsMarked";
 import { Menu, MenuItem, Tooltip } from "@material-ui/core";
 import { AuthContext } from "../../context/Auth/AuthContext";
 import { TicketsContext } from "../../context/Tickets/TicketsContext";

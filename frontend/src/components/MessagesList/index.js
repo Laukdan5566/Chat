@@ -44,7 +44,7 @@ import {
   CropFree
 } from "@material-ui/icons";
 
-import WhatsMarked from "react-whatsmarked";
+import WhatsMarked from "../SafeWhatsMarked";
 import MessageOptionsMenu from "../MessageOptionsMenu";
 import whatsBackground from "../../assets/wa-background.png";
 import whatsBackgroundDark from "../../assets/wa-background-dark.png";

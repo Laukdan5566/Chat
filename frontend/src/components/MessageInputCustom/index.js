@@ -51,7 +51,7 @@ import useQuickMessages from "../../hooks/useQuickMessages";
 
 import Compressor from "compressorjs";
 import MediaComposerDialog from "../MediaComposerDialog";
-import WhatsMarked from "react-whatsmarked";
+import WhatsMarked from "../SafeWhatsMarked";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSignature } from "@fortawesome/free-solid-svg-icons";
 import { isMobile } from "../../helpers/isMobile";
