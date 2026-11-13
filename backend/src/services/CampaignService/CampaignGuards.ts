@@ -37,7 +37,7 @@ export const pickCampaignData = async (
     if (body[key] !== undefined) data[key] = body[key];
   });
 
-  if (data.whatsappId != null) {
+  if (data.whatsappId != null && data.whatsappId !== "") {
     const whatsapp = await Whatsapp.findOne({
       where: { id: data.whatsappId, companyId },
       attributes: ["id"]
@@ -45,7 +45,7 @@ export const pickCampaignData = async (
     if (!whatsapp) throw new AppError("ERR_FORBIDDEN", 403);
   }
 
-  if (data.contactListId != null) {
+  if (data.contactListId != null && data.contactListId !== "") {
     const list = await ContactList.findOne({
       where: { id: data.contactListId, companyId },
       attributes: ["id"]

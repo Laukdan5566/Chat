@@ -164,6 +164,12 @@ describe("campanhas", () => {
     expect(dados).toEqual({ name: "x", message1: "oi" });
   });
 
+  it("campo vazio do formulário não consulta o banco", async () => {
+    wppFindOne.mockClear();
+    await pickCampaignData({ name: "x", whatsappId: "", contactListId: "" }, 1);
+    expect(wppFindOne).not.toHaveBeenCalled();
+  });
+
   it("recusa conexão e lista de contatos de outra empresa", async () => {
     wppFindOne.mockResolvedValue(null);
     await expect(pickCampaignData({ name: "x", whatsappId: 8 }, 1)).rejects.toMatchObject({ statusCode: 403 });
