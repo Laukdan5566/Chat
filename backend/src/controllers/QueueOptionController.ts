@@ -4,6 +4,10 @@ import CreateService from "../services/QueueOptionService/CreateService";
 import ListService from "../services/QueueOptionService/ListService";
 import UpdateService from "../services/QueueOptionService/UpdateService";
 import ShowService from "../services/QueueOptionService/ShowService";
+import {
+  assertQueueInCompany,
+  assertQueueOptionInCompany
+} from "../services/QueueOptionService/QueueOptionScope";
 import DeleteService from "../services/QueueOptionService/DeleteService";
 
 import { head } from "lodash";
@@ -23,7 +27,16 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   const { queueId, queueOptionId, parentId } = req.query as FilterList;
 
   // Convert the strings to numbers
+  const { companyId } = req.user;
   const convertedQueueId: number = parseInt(queueId, 10);
+
+  // a consulta precisa partir de uma fila ou opção da empresa de quem pergunta
+  if (convertedQueueId) await assertQueueInCompany(convertedQueueId, companyId);
+  if (queueOptionId) await assertQueueOptionInCompany(queueOptionId, companyId);
+  if (+parentId > 0) await assertQueueOptionInCompany(parentId, companyId);
+  if (!convertedQueueId && !queueOptionId && !(+parentId > 0)) {
+    throw new AppError("ERR_QUEUE_REQUIRED", 400);
+  }
   const convertedQueueOptionId = parseInt(queueOptionId, 10);
   const convertedParentId = parseInt(parentId, 10);
 
@@ -38,6 +51,12 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
   const queueOptionData = req.body;
+  const { companyId } = req.user;
+
+  await assertQueueInCompany(queueOptionData.queueId, companyId);
+  if (queueOptionData.parentId) {
+    await assertQueueOptionInCompany(queueOptionData.parentId, companyId);
+  }
 
   const queueOption = await CreateService(queueOptionData);
 
@@ -47,6 +66,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 export const show = async (req: Request, res: Response): Promise<Response> => {
   const { queueOptionId } = req.params;
 
+  await assertQueueOptionInCompany(queueOptionId, req.user.companyId);
   const queueOption = await ShowService(queueOptionId);
 
   return res.status(200).json(queueOption);
@@ -59,6 +79,14 @@ export const update = async (
   const { queueOptionId } = req.params;
   const queueOptionData = req.body;
 
+  await assertQueueOptionInCompany(queueOptionId, req.user.companyId);
+  // mover a opção para outra fila/pai também precisa ficar na mesma empresa
+  if (queueOptionData.queueId) {
+    await assertQueueInCompany(queueOptionData.queueId, req.user.companyId);
+  }
+  if (queueOptionData.parentId) {
+    await assertQueueOptionInCompany(queueOptionData.parentId, req.user.companyId);
+  }
   const queueOption = await UpdateService(queueOptionId, queueOptionData);
 
   return res.status(200).json(queueOption);
@@ -70,6 +98,7 @@ export const remove = async (
 ): Promise<Response> => {
   const { queueOptionId } = req.params;
 
+  await assertQueueOptionInCompany(queueOptionId, req.user.companyId);
   await DeleteService(queueOptionId);
 
   return res.status(200).json({ message: "Option Delected" });
@@ -82,6 +111,8 @@ export const mediaUpload = async (
   const { queueOptionId } = req.params;
   const files = req.files as Express.Multer.File[];
   const file = head(files);
+
+  await assertQueueOptionInCompany(queueOptionId, req.user.companyId);
 
   try {
     const queueOption = await QueueOption.findOne(
@@ -119,6 +150,8 @@ export const deleteMedia = async (
   res: Response
 ): Promise<Response> => {
   const { queueOptionId } = req.params;
+
+  await assertQueueOptionInCompany(queueOptionId, req.user.companyId);
 
   try {
     const queue = await QueueOption.findByPk(queueOptionId);

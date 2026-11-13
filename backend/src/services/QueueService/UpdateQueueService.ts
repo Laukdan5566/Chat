@@ -2,6 +2,7 @@ import { Op } from "sequelize";
 import * as Yup from "yup";
 import AppError from "../../errors/AppError";
 import Queue from "../../models/Queue";
+import assertSafeWebhookUrl from "../../helpers/assertSafeWebhookUrl";
 import ShowQueueService from "./ShowQueueService";
 
 interface QueueData {
@@ -20,6 +21,7 @@ const UpdateQueueService = async (
   companyId: number
 ): Promise<Queue> => {
   const { color, name } = queueData;
+  assertSafeWebhookUrl(queueData.n8nWebhookUrl);
 
   const queueSchema = Yup.object().shape({
     name: Yup.string()

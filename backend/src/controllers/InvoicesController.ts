@@ -38,7 +38,8 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
 
   const { invoices, count, hasMore } = await ListInvoicesServices({
     searchParam,
-    pageNumber
+    pageNumber,
+    companyId: req.user.isSuper ? undefined : req.user.companyId
   });
 
   return res.json({ invoices, count, hasMore });
@@ -47,7 +48,10 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
 export const show = async (req: Request, res: Response): Promise<Response> => {
   const { Invoiceid } = req.params;
 
-  const invoice = await ShowInvoceService(Invoiceid);
+  const invoice = await ShowInvoceService(
+    Invoiceid,
+    req.user.isSuper ? undefined : req.user.companyId
+  );
 
   return res.status(200).json(invoice);
 };

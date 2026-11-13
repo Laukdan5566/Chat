@@ -28,7 +28,7 @@ CMD if [ "${FRONTEND_REQUIRE_HTTPS:-false}" = "true" ]; then \
     fi \
     && (echo "{" && while IFS='=' read -r name value; do \
         printf '\t"%s": "%s"\n' "$name" "$value"; \
-    done < <(env) | sed '$!s/$/,/' && echo "}")  > /var/www/public/config.json \
+    done < <(env | grep -E '^(BACKEND_|FRONTEND_|REACT_APP_|RECAPTCHA_SITE_KEY=|LOG_LEVEL=)') | sed '$!s/$/,/' && echo "}")  > /var/www/public/config.json \
     && if [ -n "$BACKEND_SERVICE" ]; then \
         BACKEND_IP=$(getent hosts $BACKEND_SERVICE | awk '{ print $1 }') \
         && echo "$BACKEND_IP backend" >> /etc/hosts; \

@@ -1,5 +1,6 @@
 import { Response as Res } from "express";
 
+import { isRefreshTokenRevoked } from "../../helpers/RevokedRefreshTokens";
 import User from "../../models/User";
 import AppError from "../../errors/AppError";
 import ShowUserService from "../UserServices/ShowUserService";
@@ -31,6 +32,11 @@ export const RefreshTokenService = async (
       originalUserId,
       originalCompanyId
     } = decoded as RefreshTokenPayload;
+
+    if (await isRefreshTokenRevoked(decoded.jti)) {
+      res.clearCookie("jrt");
+      throw new AppError("ERR_SESSION_EXPIRED", 401);
+    }
 
     const user = await ShowUserService(id);
 

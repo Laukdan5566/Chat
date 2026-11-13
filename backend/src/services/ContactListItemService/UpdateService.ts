@@ -8,12 +8,15 @@ interface Data {
   name: string;
   number: string;
   email?: string;
+  companyId: number;
 }
 
 const UpdateService = async (data: Data): Promise<ContactListItem> => {
   const { id, name, number, email } = data;
 
-  const record = await ContactListItem.findByPk(id);
+  const record = await ContactListItem.findOne({
+    where: { id, companyId: data.companyId }
+  });
 
   if (!record) {
     throw new AppError("ERR_NO_CONTACTLISTITEM_FOUND", 404);

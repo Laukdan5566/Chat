@@ -33,6 +33,7 @@ import { getWbot } from "../libs/wbot";
 import GetDefaultWhatsApp from "../helpers/GetDefaultWhatsApp";
 import { csvDetectDelimiter } from "../helpers/csvDetectDelimiter";
 import Ticket from "../models/Ticket";
+import Whatsapp from "../models/Whatsapp";
 import GetProfilePicUrl from "../services/WbotServices/GetProfilePicUrl";
 
 type IndexQuery = {
@@ -201,6 +202,14 @@ export const refreshProfilePicture = async (
   if (!selectedWhatsappId) {
     const defaultWhatsapp = await GetDefaultWhatsApp(companyId);
     selectedWhatsappId = defaultWhatsapp.id;
+  }
+
+  const ownWhatsapp = await Whatsapp.findOne({
+    where: { id: selectedWhatsappId, companyId },
+    attributes: ["id"]
+  });
+  if (!ownWhatsapp) {
+    throw new AppError("ERR_WAPP_NOT_FOUND", 404);
   }
 
   const wbot = getWbot(Number(selectedWhatsappId));

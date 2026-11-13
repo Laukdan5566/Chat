@@ -117,7 +117,10 @@ export const mediaUpload = async (
   const file = head(files);
 
   try {
-    const queue = await Queue.findByPk(queueId);
+    const queue = await Queue.findOne({
+      where: { id: queueId, companyId: req.user.companyId }
+    });
+    if (!queue) throw new AppError("ERR_QUEUE_NOT_FOUND", 404);
 
     const savedFilePath = await saveMediaToFile(
       {
@@ -150,7 +153,10 @@ export const deleteMedia = async (
   const { queueId } = req.params;
 
   try {
-    const queue = await Queue.findByPk(queueId);
+    const queue = await Queue.findOne({
+      where: { id: queueId, companyId: req.user.companyId }
+    });
+    if (!queue) throw new AppError("ERR_QUEUE_NOT_FOUND", 404);
     const filePath = path.resolve("public", queue.mediaPath);
     const fileExists = fs.existsSync(filePath);
     if (fileExists) {

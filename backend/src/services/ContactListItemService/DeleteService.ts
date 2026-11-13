@@ -1,9 +1,12 @@
 import ContactListItem from "../../models/ContactListItem";
 import AppError from "../../errors/AppError";
 
-const DeleteService = async (id: string): Promise<void> => {
+const DeleteService = async (
+  id: string,
+  companyId: number
+): Promise<void> => {
   const record = await ContactListItem.findOne({
-    where: { id }
+    where: { id, companyId }
   });
 
   if (!record) {

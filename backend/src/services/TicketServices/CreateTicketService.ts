@@ -7,6 +7,8 @@ import { getIO } from "../../libs/socket";
 import FindOrCreateATicketTrakingService from "./FindOrCreateATicketTrakingService";
 import Contact from "../../models/Contact";
 import Whatsapp from "../../models/Whatsapp";
+import Queue from "../../models/Queue";
+import User from "../../models/User";
 import { incrementCounter } from "../CounterServices/IncrementCounter";
 
 interface Request {
@@ -79,6 +81,16 @@ const CreateTicketService = async ({
   }
 
   const { isGroup } = await ShowContactService(contactId, companyId);
+
+  // fila e usuário do corpo precisam ser da empresa do ticket
+  if (queueId) {
+    const queue = await Queue.findOne({ where: { id: queueId, companyId }, attributes: ["id"] });
+    if (!queue) throw new AppError("ERR_QUEUE_NOT_FOUND", 403);
+  }
+  if (userId) {
+    const owner = await User.findOne({ where: { id: userId, companyId }, attributes: ["id"] });
+    if (!owner) throw new AppError("ERR_USER_NOT_FOUND", 403);
+  }
 
   ticket = await Ticket.create({
     contactId,

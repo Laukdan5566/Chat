@@ -89,7 +89,14 @@ app.use(
   })
 );
 app.use(cookieParser());
-app.use(express.json());
+app.use(
+  express.json({
+    // corpo bruto só dos webhooks: a assinatura da Meta é calculada sobre ele
+    verify: (req: any, _res, buf) => {
+      if (req.originalUrl?.includes("/webhook")) req.rawBody = buf;
+    }
+  })
+);
 app.use(Sentry.Handlers.requestHandler());
 app.get("/public/*", (req, res) => {
   const filePath = path.join(uploadConfig.directory, req.params[0]);

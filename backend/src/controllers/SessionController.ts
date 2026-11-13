@@ -16,6 +16,7 @@ import Company from "../models/Company";
 import Plan from "../models/Plan";
 import Setting from "../models/Setting";
 import Translation from "../models/Translation";
+import { revokeRefreshToken } from "../helpers/RevokedRefreshTokens";
 import { decodeRefreshToken } from "../helpers/DecodeRefreshToken";
 import UserSocketSession from "../models/UserSocketSession";
 import detectDeviceType, { DeviceType } from "../helpers/DetectDeviceType";
@@ -293,6 +294,17 @@ export const remove = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
+  // encerra de verdade: o refresh token deste navegador deixa de renovar
+  const token = req.cookies?.jrt;
+  if (token) {
+    try {
+      const decoded = decodeRefreshToken(token);
+      await revokeRefreshToken(decoded.jti, decoded.exp);
+    } catch {
+      // token expirado ou inválido: não há o que revogar
+    }
+  }
+
   res.clearCookie("jrt");
 
   return res.send();

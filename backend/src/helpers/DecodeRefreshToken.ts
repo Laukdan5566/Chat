@@ -11,6 +11,7 @@ export type RefreshTokenPayload = {
   originalUserId?: number;
   originalCompanyId?: number;
   originalSessionId?: string;
+  jti?: string;
   iat: number;
   exp: number;
 };

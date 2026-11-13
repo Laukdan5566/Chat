@@ -1,6 +1,7 @@
 import * as Yup from "yup";
 import AppError from "../../errors/AppError";
 import Queue from "../../models/Queue";
+import assertSafeWebhookUrl from "../../helpers/assertSafeWebhookUrl";
 import Company from "../../models/Company";
 import Plan from "../../models/Plan";
 
@@ -17,6 +18,7 @@ interface QueueData {
 
 const CreateQueueService = async (queueData: QueueData): Promise<Queue> => {
   const { color, name, companyId } = queueData;
+  assertSafeWebhookUrl(queueData.n8nWebhookUrl);
 
   const company = await Company.findOne({
     where: {

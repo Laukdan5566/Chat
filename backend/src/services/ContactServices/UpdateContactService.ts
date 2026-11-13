@@ -109,7 +109,11 @@ const UpdateContactService = async ({
   if (extraInfo) {
     await Promise.all(
       extraInfo.map(async (info: any) => {
-        await ContactCustomField.upsert({ ...info, contactId: contact.id });
+        // um id que não é de um campo deste contato vira campo novo (sem mover o de outro contato)
+        const ownIds = contact.extraInfo.map(i => i.id);
+        const { id: infoId, ...rest } = info;
+        const safeInfo = infoId && ownIds.includes(infoId) ? info : rest;
+        await ContactCustomField.upsert({ ...safeInfo, contactId: contact.id });
       })
     );
 

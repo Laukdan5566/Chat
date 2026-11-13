@@ -4,6 +4,7 @@ import Queue from "../../models/Queue";
 import Ticket from "../../models/Ticket";
 import Whatsapp from "../../models/Whatsapp";
 import { logger } from "../../utils/logger";
+import { isSafeWebhookUrl } from "../../helpers/assertSafeWebhookUrl";
 import FindNotesByContactIdAndTicketId from "../TicketNoteService/FindNotesByContactIdAndTicketId";
 
 type N8nTicketContext = {
@@ -127,6 +128,12 @@ const RunN8nWebhookService = async (
     return [];
   }
 
+  // URL já gravada antes da validação (ou alterada direto no banco): não chama destino inseguro
+  if (!isSafeWebhookUrl(queue.n8nWebhookUrl)) {
+    logger.warn({ queueId: queue.id }, "n8nWebhookUrl recusada: destino inseguro");
+    return [];
+  }
+
   setN8nTicketContext(whatsapp.token, ticket);
 
   try {
@@ -134,7 +141,8 @@ const RunN8nWebhookService = async (
       queue.n8nWebhookUrl,
       await buildPayload(ticket, message, whatsapp),
       {
-        timeout: 120000
+        timeout: 120000,
+        maxRedirects: 0
       }
     );
 

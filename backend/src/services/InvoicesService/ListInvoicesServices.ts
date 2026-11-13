@@ -4,6 +4,7 @@ import Invoices from "../../models/Invoices";
 interface Request {
   searchParam?: string;
   pageNumber?: string;
+  companyId?: number;
 }
 
 interface Response {
@@ -14,7 +15,8 @@ interface Response {
 
 const ListInvoicesServices = async ({
   searchParam = "",
-  pageNumber = "1"
+  pageNumber = "1",
+  companyId
 }: Request): Promise<Response> => {
   const whereCondition = {
     [Op.or]: [
@@ -27,6 +29,8 @@ const ListInvoicesServices = async ({
       }
     ]
   };
+  // quem não é super só vê as faturas da própria empresa
+  if (companyId) Object.assign(whereCondition, { companyId });
   const limit = 20;
   const offset = limit * (+pageNumber - 1);
 

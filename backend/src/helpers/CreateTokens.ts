@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { sign } from "jsonwebtoken";
 import authConfig from "../config/auth";
 import User from "../models/User";
@@ -55,7 +56,9 @@ export const createRefreshToken = (
     },
     refreshSecret,
     {
-      expiresIn: refreshExpiresIn
+      expiresIn: refreshExpiresIn,
+      // identifica o token para poder revogá-lo no logout
+      jwtid: randomUUID()
     }
   );
 };

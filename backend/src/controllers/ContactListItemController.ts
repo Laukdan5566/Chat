@@ -4,6 +4,7 @@ import { getIO } from "../libs/socket";
 
 import ListService from "../services/ContactListItemService/ListService";
 import CreateService from "../services/ContactListItemService/CreateService";
+import ContactListShowService from "../services/ContactListService/ShowService";
 import ShowService from "../services/ContactListItemService/ShowService";
 import UpdateService from "../services/ContactListItemService/UpdateService";
 import DeleteService from "../services/ContactListItemService/DeleteService";
@@ -61,6 +62,9 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     throw new AppError(err.message);
   }
 
+  // a lista de destino precisa ser da empresa de quem cria o item
+  await ContactListShowService((data as any).contactListId, companyId);
+
   const record = await CreateService({
     ...data,
     companyId
@@ -78,7 +82,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 export const show = async (req: Request, res: Response): Promise<Response> => {
   const { id } = req.params;
 
-  const record = await ShowService(id);
+  const record = await ShowService(id, req.user.companyId);
 
   return res.status(200).json(record);
 };
@@ -104,6 +108,7 @@ export const update = async (
 
   const record = await UpdateService({
     ...data,
+    companyId,
     id
   });
 
@@ -123,7 +128,7 @@ export const remove = async (
   const { id } = req.params;
   const { companyId } = req.user;
 
-  await DeleteService(id);
+  await DeleteService(id, companyId);
 
   const io = getIO();
   io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-ContactListItem`, {

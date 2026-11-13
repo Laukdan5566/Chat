@@ -83,7 +83,7 @@ export const owenWebhook = async (
   res: Response
 ): Promise<Response> => {
   const { data } = req.body;
-  if (data.status === "APPROVED") {
+  if (data?.status === "APPROVED") {
     const { qrcodeId } = data;
     const invoice = await Invoices.findOne({
       where: {
@@ -93,30 +93,12 @@ export const owenWebhook = async (
       include: { model: Company, as: "company" }
     });
 
-    if (!invoice || data.valor < invoice.value) {
+    if (!invoice) {
       return res.json({ ok: true });
     }
 
-    const expiresAt = new Date(invoice.company.dueDate);
-    expiresAt.setDate(expiresAt.getDate() + 30);
-    const date = expiresAt.toISOString().split("T")[0];
-
-    await invoice.company.update({
-      dueDate: date
-    });
-    await invoice.update({
-      status: "paid"
-    });
-    await invoice.company.reload();
-    const io = getIO();
-
-    io.to(`company-${invoice.companyId}-mainchannel`)
-      .to("super")
-      .emit(`company-${invoice.companyId}-payment`, {
-        action: "CONCLUIDA",
-        company: invoice.company,
-        invoiceId: invoice.id
-      });
+    // o corpo do webhook não é confiável: o pagamento só vale depois de consultar o Owen
+    await owenCheckStatus(invoice);
   }
   return res.json({ ok: true });
 };
@@ -204,6 +186,10 @@ export const owenCreateSubscription = async (
 ): Promise<Response> => {
   const { price, invoiceId } = req.body;
 
+  if (!Number.isFinite(Number(price)) || Number(price) <= 0) {
+    throw new AppError("ERR_INVALID_PRICE", 400);
+  }
+
   const owenConfig: OwenConfig = await owenLoadConfig();
 
   const qrData = {
@@ -214,7 +200,9 @@ export const owenCreateSubscription = async (
   };
 
   try {
-    const invoice = await Invoices.findByPk(invoiceId);
+    const invoice = await Invoices.findOne({
+      where: { id: invoiceId, companyId: req.user.companyId }
+    });
     if (!invoice) {
       throw new Error("Invoice not found");
     }

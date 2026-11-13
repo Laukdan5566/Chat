@@ -168,12 +168,8 @@ export const efiWebhook = async (
           return true;
         }
 
-        if (pix.valor < invoice.value) {
-          logger.debug("Recebido valor menor");
-          return true;
-        }
-
-        await processInvoicePaid(invoice);
+        // o corpo do webhook não é confiável: o pagamento só vale depois de consultar a Efi
+        await efiCheckStatus(invoice);
         return true;
       }
     );
@@ -256,6 +252,10 @@ export const efiCreateSubscription = async (
 ): Promise<Response> => {
   const { price, invoiceId } = req.body;
 
+  if (!Number.isFinite(Number(price)) || Number(price) <= 0) {
+    throw new AppError("ERR_INVALID_PRICE", 400);
+  }
+
   const body = {
     calendario: {
       expiracao: 300
@@ -268,7 +268,10 @@ export const efiCreateSubscription = async (
   };
   const efiOptions = await getEfiOptions();
   try {
-    const invoice = await Invoices.findByPk(invoiceId);
+    // a fatura precisa ser da empresa de quem está pagando
+    const invoice = await Invoices.findOne({
+      where: { id: invoiceId, companyId: req.user.companyId }
+    });
     if (!invoice) {
       throw new Error("Invoice not found");
     }
