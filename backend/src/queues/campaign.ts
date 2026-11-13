@@ -416,6 +416,9 @@ async function handleDispatchCampaign(job) {
       });
       if (campaign.mediaPath) {
         const filePath = path.resolve("public", campaign.mediaPath);
+        if (!filePath.startsWith(path.resolve("public") + path.sep)) {
+          throw new Error("mediaPath fora do diretório público");
+        }
         const content = await getMessageFileOptions(
           campaign.mediaName,
           filePath

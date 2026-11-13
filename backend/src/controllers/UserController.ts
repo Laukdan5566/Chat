@@ -71,12 +71,16 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     throw new AppError("ERR_NO_SUPER", 403);
   }
 
+  const callerIsAdmin = Boolean(
+    requestUser?.super || requestUser?.profile === "admin"
+  );
+
   const user = await CreateUserService({
     email,
     password,
     name,
-    profile,
-    permissions,
+    profile: callerIsAdmin ? profile : "user",
+    permissions: callerIsAdmin ? permissions : {},
     companyId: newUserCompanyId,
     queueIds
   });

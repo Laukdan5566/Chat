@@ -48,6 +48,22 @@ const UpdateUserService = async ({
     throw new AppError("ERR_FORBIDDEN", 403);
   }
 
+  const callerIsAdmin = Boolean(
+    requestUser.super || requestUser.profile === "admin"
+  );
+  const isSelf = +userId === requestUser.id;
+  const target = await User.findByPk(user.id, {
+    attributes: ["id", "super", "profile"]
+  });
+
+  // só super mexe em super e só admin mexe em admin (fora a própria conta)
+  if (!isSelf && !requestUser.super && target?.super) {
+    throw new AppError("ERR_FORBIDDEN", 403);
+  }
+  if (!isSelf && !callerIsAdmin && target?.profile === "admin") {
+    throw new AppError("ERR_FORBIDDEN", 403);
+  }
+
   const schema = Yup.object().shape({
     name: Yup.string().min(2),
     email: Yup.string().email(),
@@ -64,12 +80,12 @@ const UpdateUserService = async ({
   }
 
   if (hasPermission(requestUser, "users:view")) {
+    // perfil e permissões só mudam por admin ou super
     await user.update({
       email,
       password,
-      profile,
       name,
-      permissions: permissions || {}
+      ...(callerIsAdmin ? { profile, permissions: permissions || {} } : {})
     });
     await user.$set("queues", queueIds);
   } else {

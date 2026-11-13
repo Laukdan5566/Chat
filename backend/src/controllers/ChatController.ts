@@ -12,6 +12,7 @@ import Chat from "../models/Chat";
 import CreateMessageService from "../services/ChatService/CreateMessageService";
 import User from "../models/User";
 import ChatUser from "../models/ChatUser";
+import AssertChatAccess from "../services/ChatService/AssertChatAccess";
 
 type IndexQuery = {
   pageNumber: string;
@@ -67,9 +68,12 @@ export const update = async (
   const data = req.body;
   const { id } = req.params;
 
+  await AssertChatAccess(+id, req.user);
+
   const record = await UpdateService({
     ...data,
-    id: +id
+    id: +id,
+    companyId
   });
 
   const io = getIO();
@@ -99,6 +103,7 @@ export const remove = async (
   const { id } = req.params;
   const { companyId } = req.user;
 
+  await AssertChatAccess(+id, req.user, { ownerOnly: true });
   await DeleteService(id);
 
   const io = getIO();
@@ -120,6 +125,8 @@ export const saveMessage = async (
   const { id } = req.params;
   const senderId = +req.user.id;
   const chatId = +id;
+
+  await AssertChatAccess(chatId, req.user);
 
   let newMessage = null;
 
@@ -146,7 +153,7 @@ export const saveMessage = async (
 
   const chat = await Chat.findByPk(chatId, {
     include: [
-      { model: User, as: "owner" },
+      { model: User, as: "owner", attributes: ["id", "name"] },
       { model: ChatUser, as: "users" }
     ]
   });
@@ -174,15 +181,17 @@ export const checkAsRead = async (
   res: Response
 ): Promise<Response> => {
   const { companyId } = req.user;
-  const { userId } = req.body;
   const { id } = req.params;
+
+  await AssertChatAccess(+id, req.user);
+  const userId = +req.user.id;
 
   const chatUser = await ChatUser.findOne({ where: { chatId: id, userId } });
   await chatUser.update({ unreads: 0 });
 
   const chat = await Chat.findByPk(id, {
     include: [
-      { model: User, as: "owner" },
+      { model: User, as: "owner", attributes: ["id", "name"] },
       { model: ChatUser, as: "users" }
     ]
   });

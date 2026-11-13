@@ -4,7 +4,7 @@ import {
   AnyMessageContent
 } from "libzapitu-rf";
 import fs from "fs";
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import path from "path";
 import ffmpegPath from "@ffmpeg-installer/ffmpeg";
 import mime from "mime-types";
@@ -42,10 +42,15 @@ const supportedImages = ["image/png", "image/jpg", "image/jpeg", "image/webp"];
 const processRecordedAudio = async (audio: string): Promise<Readable> => {
   const outputAudio = `${publicFolder}/${new Date().getTime()}.ogg`;
   return new Promise((resolve, reject) => {
-    exec(
-      `${ffmpegPath.path} -i "${audio}" -vn -ar 16000 -ac 1 -c:a libopus -b:a 0 ${outputAudio}`,
-      (error, _stdout, _stderr) => {
-        if (error) reject(error);
+    // execFile com argumentos em lista: o caminho do arquivo nunca passa por um shell
+    execFile(
+      ffmpegPath.path,
+      ["-i", audio, "-vn", "-ar", "16000", "-ac", "1", "-c:a", "libopus", "-b:a", "0", outputAudio],
+      error => {
+        if (error) {
+          reject(error);
+          return;
+        }
         resolve(fs.createReadStream(outputAudio));
       }
     );

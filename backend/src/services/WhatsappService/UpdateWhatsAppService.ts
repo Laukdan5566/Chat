@@ -105,6 +105,10 @@ const UpdateWhatsAppService = async ({
     throw new AppError("ERR_WAPP_NOT_FOUND", 404);
   }
 
+  if (whatsapp.companyId !== companyId) {
+    throw new AppError("ERR_FORBIDDEN", 403);
+  }
+
   if (provider && provider !== whatsapp.provider) {
     throw new AppError("ERR_WHATSAPP_PROVIDER_CANNOT_CHANGE", 400);
   }
@@ -126,7 +130,6 @@ const UpdateWhatsAppService = async ({
     outOfHoursMessage,
     ratingMessage,
     isDefault,
-    companyId,
     token,
     facebookUserId,
     facebookUserToken,

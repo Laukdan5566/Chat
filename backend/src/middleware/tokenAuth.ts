@@ -16,6 +16,8 @@ const tokenAuth = async (
       .replace(/^=?Bearer\s+/i, "")
       .trim()
       .split(":")[0];
+    // token vazio nunca identifica uma conexão (conexões criadas sem token gravam "")
+    if (!token) throw new Error();
     const whatsapp = await Whatsapp.findOne({ where: { token } });
     if (whatsapp) {
       req.params = {

@@ -17,6 +17,10 @@ import Campaign from "../models/Campaign";
 import AppError from "../errors/AppError";
 import { CancelService } from "../services/CampaignService/CancelService";
 import { RestartService } from "../services/CampaignService/RestartService";
+import {
+  assertCampaign,
+  pickCampaignData
+} from "../services/CampaignService/CampaignGuards";
 
 type IndexQuery = {
   searchParam: string;
@@ -65,9 +69,9 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   }
 
   const record = await CreateService({
-    ...data,
+    ...(await pickCampaignData(data, companyId)),
     companyId
-  });
+  } as StoreData);
 
   const io = getIO();
   io.emit(`company-${companyId}-campaign`, {
@@ -81,6 +85,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 export const show = async (req: Request, res: Response): Promise<Response> => {
   const { id } = req.params;
 
+  await assertCampaign(id, req.user.companyId);
   const record = await ShowService(id);
 
   return res.status(200).json(record);
@@ -105,10 +110,12 @@ export const update = async (
 
   const { id } = req.params;
 
+  await assertCampaign(id, companyId);
+
   const record = await UpdateService({
-    ...data,
+    ...(await pickCampaignData(data, companyId)),
     id: parseInt(id, 10)
-  });
+  } as any);
 
   const io = getIO();
   io.emit(`company-${companyId}-campaign`, {
@@ -125,6 +132,7 @@ export const cancel = async (
 ): Promise<Response> => {
   const { id } = req.params;
 
+  await assertCampaign(id, req.user.companyId);
   await CancelService(+id);
 
   return res.status(204).json({ message: "Cancelamento realizado" });
@@ -136,6 +144,7 @@ export const restart = async (
 ): Promise<Response> => {
   const { id } = req.params;
 
+  await assertCampaign(id, req.user.companyId);
   await RestartService(+id);
 
   return res.status(204).json({ message: "Reinício dos disparos" });
@@ -148,6 +157,7 @@ export const remove = async (
   const { id } = req.params;
   const { companyId } = req.user;
 
+  await assertCampaign(id, companyId);
   await DeleteService(id);
 
   const io = getIO();
@@ -163,7 +173,7 @@ export const findList = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const params = req.query as FindParams;
+  const params: FindParams = { companyId: String(req.user.companyId) };
   const records: Campaign[] = await FindService(params);
 
   return res.status(200).json(records);
@@ -178,7 +188,7 @@ export const mediaUpload = async (
   const file = head(files);
 
   try {
-    const campaign = await Campaign.findByPk(id);
+    const campaign = await assertCampaign(id, req.user.companyId);
     campaign.mediaPath = file.filename;
     campaign.mediaName = file.originalname;
     await campaign.save();
@@ -195,9 +205,11 @@ export const deleteMedia = async (
   const { id } = req.params;
 
   try {
-    const campaign = await Campaign.findByPk(id);
+    const campaign = await assertCampaign(id, req.user.companyId);
     const filePath = path.resolve("public", campaign.mediaPath);
-    const fileExists = fs.existsSync(filePath);
+    const fileExists =
+      filePath.startsWith(path.resolve("public") + path.sep) &&
+      fs.existsSync(filePath);
     if (fileExists) {
       fs.unlinkSync(filePath);
     }
