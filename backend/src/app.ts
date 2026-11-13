@@ -9,6 +9,7 @@ import * as Sentry from "@sentry/node";
 import "./database";
 import path from "path";
 import uploadConfig from "./config/upload";
+import resolveInsideDir from "./helpers/resolveInsideDir";
 import AppError from "./errors/AppError";
 import routes from "./routes";
 import { logger } from "./utils/logger";
@@ -99,7 +100,11 @@ app.use(
 );
 app.use(Sentry.Handlers.requestHandler());
 app.get("/public/*", (req, res) => {
-  const filePath = path.join(uploadConfig.directory, req.params[0]);
+  // só arquivos dentro da pasta pública: "..", caminho absoluto e byte nulo viram 404
+  const filePath = resolveInsideDir(uploadConfig.directory, req.params[0]);
+  if (!filePath) {
+    return res.status(404).end();
+  }
 
   if (filePath.endsWith(".aac")) {
     res.setHeader("Content-Type", "audio/aac");
