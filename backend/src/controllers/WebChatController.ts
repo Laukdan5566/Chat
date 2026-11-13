@@ -1,4 +1,5 @@
 import { createHmac } from "crypto";
+import requestKey from "../helpers/webchatRequestKey";
 import { NextFunction, Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 
@@ -160,22 +161,15 @@ const assertTrustedProxy = (req: Request): void => {
   }
 };
 
-const requestKey = (req: Request, suffix: string): string =>
-  `${
-    req.get("x-webchat-client-ip") ||
-    req.ip ||
-    req.socket.remoteAddress ||
-    "unknown"
-  }:${suffix}`;
-
 const assertRateLimit = (
   req: Request,
   buckets: Map<string, RateBucket>,
   suffix: string,
   maxRequests: number,
-  windowMs: number
+  windowMs: number,
+  byIp = true
 ): void => {
-  const key = requestKey(req, suffix);
+  const key = byIp ? requestKey(req, suffix) : suffix;
   const now = Date.now();
   const current = buckets.get(key);
 
@@ -406,6 +400,9 @@ export const start = async (
   const isAutomotive = profile === "automotive";
   const contactName = cleanText(name, "Nome", 2, 80);
   const contactEmail = cleanEmail(email);
+  // Teto por e-mail e global: IP sozinho não segura quem troca de endereço.
+  assertRateLimit(req, sessionBuckets, `email:${contactEmail}`, 3, 10 * 60 * 1000, false);
+  assertRateLimit(req, sessionBuckets, "global", 100, 10 * 60 * 1000, false);
   const isNewCustomer = isAutomotive || newCustomer === true;
   const contactDocument = cleanDocument(document, isNewCustomer);
   const contactPhone = isAutomotive ? cleanPhone(phone) : "";
