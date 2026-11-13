@@ -10,6 +10,7 @@ const UpdateTicketNoteService = async (
   ticketNoteData: TicketNoteData
 ): Promise<TicketNote> => {
   const { id, note } = ticketNoteData;
+  // a empresa já foi conferida no controller (assertNoteInCompany)
 
   const ticketNote = await TicketNote.findByPk(id);
 

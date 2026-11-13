@@ -45,6 +45,16 @@ const CreateService = async ({
     }
   }
 
+  if (contactId) {
+    const contact = await Contact.findOne({
+      where: { id: contactId, companyId },
+      attributes: ["id"]
+    });
+    if (!contact) {
+      throw new AppError("Contact does not belong to the same company", 403);
+    }
+  }
+
   const schedule = await Schedule.create({
     body,
     sendAt,

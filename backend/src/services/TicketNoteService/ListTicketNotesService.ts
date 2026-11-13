@@ -1,9 +1,12 @@
 import { Sequelize, Op } from "sequelize";
 import TicketNote from "../../models/TicketNote";
+import Ticket from "../../models/Ticket";
+import Contact from "../../models/Contact";
 
 interface Request {
   searchParam?: string;
   pageNumber?: string;
+  companyId: number;
 }
 
 interface Response {
@@ -14,16 +17,24 @@ interface Response {
 
 const ListTicketNotesService = async ({
   searchParam = "",
-  pageNumber = "1"
+  pageNumber = "1",
+  companyId
 }: Request): Promise<Response> => {
+  // só notas de tickets (ou contatos, nas notas sem ticket) da empresa de quem busca
   const whereCondition = {
-    [Op.or]: [
+    [Op.and]: [
       {
         note: Sequelize.where(
-          Sequelize.fn("LOWER", Sequelize.col("note")),
+          Sequelize.fn("LOWER", Sequelize.col("TicketNote.note")),
           "LIKE",
           `%${searchParam.toLowerCase().trim()}%`
         )
+      },
+      {
+        [Op.or]: [
+          { "$ticket.companyId$": companyId },
+          { "$contact.companyId$": companyId }
+        ]
       }
     ]
   };
@@ -32,6 +43,11 @@ const ListTicketNotesService = async ({
 
   const { count, rows: ticketNotes } = await TicketNote.findAndCountAll({
     where: whereCondition,
+    include: [
+      { model: Ticket, as: "ticket", attributes: [], required: false },
+      { model: Contact, as: "contact", attributes: [], required: false }
+    ],
+    subQuery: false,
     limit,
     offset,
     order: [["createdAt", "DESC"]]

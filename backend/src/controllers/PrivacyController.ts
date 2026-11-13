@@ -17,8 +17,8 @@ interface PrivacyData {
   whatsappId?: number;
 }
 
-function checkWhatsapp(whatsapp: Whatsapp) {
-  if (!whatsapp) {
+function checkWhatsapp(whatsapp: Whatsapp, companyId: number) {
+  if (!whatsapp || whatsapp.companyId !== companyId) {
     throw new AppError("ERR_NOT_FOUND", 404);
   }
 
@@ -36,7 +36,7 @@ export const show = async (req: Request, res: Response): Promise<Response> => {
 
   const whatsapp: Whatsapp = await ShowWhatsAppService(whatsappId);
 
-  checkWhatsapp(whatsapp);
+  checkWhatsapp(whatsapp, req.user.companyId);
 
   const privacy: PrivacyData = await ShowPrivacyService(whatsappId);
   return res.status(200).json(privacy);
@@ -50,7 +50,7 @@ export const update = async (
 
   const whatsapp: Whatsapp = await ShowWhatsAppService(whatsappId);
 
-  checkWhatsapp(whatsapp);
+  checkWhatsapp(whatsapp, req.user.companyId);
 
   const privacyData: PrivacyData = req.body;
   await UpdatePrivacyWhatsapp(whatsapp.id, privacyData, true);

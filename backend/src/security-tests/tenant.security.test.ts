@@ -9,7 +9,7 @@ jest.mock("../models/User", () => ({
 jest.mock("../models/Company", () => ({ __esModule: true, default: { findByPk: jest.fn().mockResolvedValue({ id: 1 }) } }));
 jest.mock("../services/UserServices/ShowUserService", () => ({ __esModule: true, default: jest.fn() }));
 jest.mock("../services/UserServices/CreateUserService", () => ({ __esModule: true, default: jest.fn().mockResolvedValue({ id: 99 }) }));
-jest.mock("../libs/socket", () => ({ getIO: () => ({ emit: jest.fn() }) }));
+jest.mock("../libs/socket", () => ({ getIO: () => ({ emit: jest.fn(), to: () => ({ emit: jest.fn() }) }) }));
 jest.mock("../services/UserServices/ListUsersService", () => ({ __esModule: true, default: jest.fn() }));
 jest.mock("../services/UserServices/DeleteUserService", () => ({ __esModule: true, default: jest.fn() }));
 jest.mock("../services/UserServices/SimpleListService", () => ({ __esModule: true, default: jest.fn() }));

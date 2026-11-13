@@ -6,6 +6,7 @@ interface Request {
   user: {
     profile: string;
     companyId: number;
+    isSuper?: boolean;
   };
 }
 
@@ -28,6 +29,10 @@ export const GetSettingService = async ({
   user
 }: Request): Promise<string> => {
   if (key === "_fpOpsToken") throw new AppError("ERR_NO_PERMISSION", 403);
+  // prefixo "_" = segredo gerido pelo super (token Zammad, chaves de pagamento etc.)
+  if (key.startsWith("_") && !user.isSuper) {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
   if (user.profile !== "admin" && !(key in safeSettingsKeys)) {
     throw new AppError("ERR_NO_PERMISSION", 403);
   }

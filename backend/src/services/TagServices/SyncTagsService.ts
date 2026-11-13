@@ -17,13 +17,24 @@ interface Request {
   companyId?: number;
 }
 
+// só tags da própria empresa podem ser ligadas a ticket/contato
+const onlyCompanyTags = async (tags: Tag[], companyId: number) => {
+  const found = await Tag.findAll({
+    where: { id: tags.map(t => t.id), companyId },
+    attributes: ["id"]
+  });
+  const ids = new Set(found.map(t => t.id));
+  return tags.filter(t => ids.has(t.id));
+};
+
 const SyncTicketTags = async ({
   tags,
   ticketId,
   companyId
 }: Request): Promise<Ticket | null> => {
-  const ticket = await ShowTicketService(ticketId);
+  const ticket = await ShowTicketService(ticketId, companyId);
   const tagsMode = await GetCompanySetting(companyId, "tagsMode", "ticket");
+  tags = await onlyCompanyTags(tags, companyId);
 
   if (["ticket", "both"].includes(tagsMode)) {
     const tagList = tags.map(t => ({ tagId: t.id, ticketId }));
@@ -55,7 +66,8 @@ const SyncContactTags = async ({
     throw new AppError("ERR_INVALID_TAGMODE", 400);
   }
 
-  const contact = await ShowContactService(contactId);
+  const contact = await ShowContactService(contactId, companyId);
+  tags = await onlyCompanyTags(tags, companyId);
 
   const tagList = tags.map(t => ({ tagId: t.id, contactId }));
 

@@ -67,7 +67,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   });
 
   const io = getIO();
-  io.emit(`company-${companyId}-ContactListItem`, {
+  io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-ContactListItem`, {
     action: "create",
     record
   });
@@ -108,7 +108,7 @@ export const update = async (
   });
 
   const io = getIO();
-  io.emit(`company-${companyId}-ContactListItem`, {
+  io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-ContactListItem`, {
     action: "update",
     record
   });
@@ -126,7 +126,7 @@ export const remove = async (
   await DeleteService(id);
 
   const io = getIO();
-  io.emit(`company-${companyId}-ContactListItem`, {
+  io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-ContactListItem`, {
     action: "delete",
     id
   });
@@ -138,7 +138,10 @@ export const findList = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const params = req.query as unknown as FindParams;
+  const params = {
+    ...(req.query as unknown as FindParams),
+    companyId: req.user.companyId
+  } as FindParams;
   const records: ContactListItem[] = await FindService(params);
 
   return res.status(200).json(records);

@@ -13,6 +13,7 @@ import ListTicketsServiceKanban from "../services/TicketServices/ListTicketsServ
 import ShowUserService from "../services/UserServices/ShowUserService";
 import { hasPermission } from "../helpers/UserPermissions";
 import AppError from "../errors/AppError";
+import User from "../models/User";
 import CreateHelpdeskTicketService from "../services/HelpdeskServices/CreateHelpdeskTicketService";
 
 type IndexQuery = {
@@ -287,6 +288,11 @@ export const remove = async (
 ): Promise<Response> => {
   const { ticketId } = req.params;
   const { companyId } = req.user;
+
+  const requestUser = await User.findByPk(req.user.id);
+  if (!hasPermission(requestUser, "ticket-options:deleteTicket")) {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
 
   await ShowTicketService(ticketId, companyId);
 

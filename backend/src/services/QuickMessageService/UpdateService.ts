@@ -6,12 +6,13 @@ interface Data {
   message: string;
   userId: number;
   id?: number;
+  companyId: number;
 }
 
 const UpdateService = async (data: Data): Promise<QuickMessage> => {
-  const { id, shortcode, message, userId } = data;
+  const { id, shortcode, message, userId, companyId } = data;
 
-  const record = await QuickMessage.findByPk(id);
+  const record = await QuickMessage.findOne({ where: { id, companyId } });
 
   if (!record) {
     throw new AppError("ERR_NO_TICKETNOTE_FOUND", 404);

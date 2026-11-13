@@ -17,6 +17,8 @@ import CheckContactNumber, {
   IOnWhatsapp
 } from "../services/WbotServices/CheckNumber";
 import AppError from "../errors/AppError";
+import User from "../models/User";
+import { hasPermission } from "../helpers/UserPermissions";
 import SimpleListService, {
   SearchContactParams
 } from "../services/ContactServices/SimpleListService";
@@ -301,6 +303,11 @@ export const remove = async (
 ): Promise<Response> => {
   const { contactId } = req.params;
   const { companyId } = req.user;
+
+  const requestUser = await User.findByPk(req.user.id);
+  if (!hasPermission(requestUser, "contacts-page:deleteContact")) {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
 
   await ShowContactService(contactId, companyId);
 

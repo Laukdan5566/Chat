@@ -61,7 +61,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   });
 
   const io = getIO();
-  io.emit(`company-${companyId}-quickmessage`, {
+  io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-quickmessage`, {
     action: "create",
     record
   });
@@ -72,7 +72,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 export const show = async (req: Request, res: Response): Promise<Response> => {
   const { id } = req.params;
 
-  const record = await ShowService(id);
+  const record = await ShowService(id, req.user.companyId);
 
   return res.status(200).json(record);
 };
@@ -100,11 +100,12 @@ export const update = async (
   const record = await UpdateService({
     ...data,
     userId: Number.parseInt(req.user.id, 10),
-    id: Number.parseInt(id, 10)
+    id: Number.parseInt(id, 10),
+    companyId
   });
 
   const io = getIO();
-  io.emit(`company-${companyId}-quickmessage`, {
+  io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-quickmessage`, {
     action: "update",
     record
   });
@@ -119,10 +120,10 @@ export const remove = async (
   const { id } = req.params;
   const { companyId } = req.user;
 
-  await DeleteService(id);
+  await DeleteService(id, companyId);
 
   const io = getIO();
-  io.emit(`company-${companyId}-quickmessage`, {
+  io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-quickmessage`, {
     action: "delete",
     id
   });

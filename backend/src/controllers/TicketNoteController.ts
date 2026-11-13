@@ -2,6 +2,11 @@ import * as Yup from "yup";
 import { Request, Response } from "express";
 import AppError from "../errors/AppError";
 import TicketNote from "../models/TicketNote";
+import {
+  assertContactInCompany,
+  assertNoteInCompany,
+  assertTicketInCompany
+} from "../services/TicketNoteService/TicketNoteScope";
 
 import ListTicketNotesService from "../services/TicketNoteService/ListTicketNotesService";
 import CreateTicketNoteService from "../services/TicketNoteService/CreateTicketNoteService";
@@ -39,10 +44,12 @@ type QueryFilteredNotes = {
 
 export const index = async (req: Request, res: Response): Promise<Response> => {
   const { searchParam, pageNumber } = req.query as IndexQuery;
+  const { companyId } = req.user;
 
   const { ticketNotes, count, hasMore } = await ListTicketNotesService({
     searchParam,
-    pageNumber
+    pageNumber,
+    companyId
   });
 
   return res.json({ ticketNotes, count, hasMore });
@@ -56,7 +63,14 @@ export const list = async (req: Request, res: Response): Promise<Response> => {
 
 export const store = async (req: Request, res: Response): Promise<Response> => {
   const newTicketNote: StoreTicketNoteData = req.body;
-  const { id: userId } = req.user;
+  const { id: userId, companyId } = req.user;
+
+  if (newTicketNote.ticketId) {
+    await assertTicketInCompany(newTicketNote.ticketId, companyId);
+  }
+  if (newTicketNote.contactId) {
+    await assertContactInCompany(newTicketNote.contactId, companyId);
+  }
 
   const schema = Yup.object().shape({
     note: Yup.string().required()
@@ -79,6 +93,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
 export const show = async (req: Request, res: Response): Promise<Response> => {
   const { id } = req.params;
 
+  await assertNoteInCompany(id, req.user.companyId);
   const ticketNote = await ShowTicketNoteService(id);
 
   return res.status(200).json(ticketNote);
@@ -89,6 +104,8 @@ export const update = async (
   res: Response
 ): Promise<Response> => {
   const ticketNote: UpdateTicketNoteData = req.body;
+
+  await assertNoteInCompany(req.params.id || ticketNote.id, req.user.companyId);
 
   const schema = Yup.object().shape({
     note: Yup.string()
@@ -115,6 +132,7 @@ export const remove = async (
     throw new AppError("ERR_NO_PERMISSION", 403);
   }
 
+  await assertNoteInCompany(id, req.user.companyId);
   await DeleteTicketNoteService(id);
 
   return res.status(200).json({ message: "Observação removida" });
@@ -126,6 +144,9 @@ export const findFilteredList = async (
 ): Promise<Response> => {
   try {
     const { contactId, ticketId } = req.query as QueryFilteredNotes;
+    const { companyId } = req.user;
+    if (+ticketId) await assertTicketInCompany(ticketId, companyId);
+    if (+contactId) await assertContactInCompany(contactId, companyId);
     const notes: TicketNote[] = await FindNotesByContactIdAndTicketId({
       contactId,
       ticketId
@@ -133,6 +154,7 @@ export const findFilteredList = async (
 
     return res.status(200).json(notes);
   } catch (e) {
+    if (e instanceof AppError) throw e;
     return res.status(500).json({ message: e });
   }
 };

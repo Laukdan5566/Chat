@@ -21,7 +21,8 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   const { companyId: queryCompanyId } = req.query as unknown as QueueFilter;
   let companyId = userCompanyId;
 
-  if (!isNil(queryCompanyId)) {
+  // só o super lista as filas de outra empresa
+  if (!isNil(queryCompanyId) && req.user.isSuper) {
     companyId = +queryCompanyId;
   }
 
@@ -54,7 +55,7 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   });
 
   const io = getIO();
-  io.emit(`company-${companyId}-queue`, {
+  io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-queue`, {
     action: "update",
     queue
   });
@@ -81,7 +82,7 @@ export const update = async (
   const queue = await UpdateQueueService(queueId, req.body, companyId);
 
   const io = getIO();
-  io.emit(`company-${companyId}-queue`, {
+  io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-queue`, {
     action: "update",
     queue
   });
@@ -99,7 +100,7 @@ export const remove = async (
   await DeleteQueueService(queueId, companyId);
 
   const io = getIO();
-  io.emit(`company-${companyId}-queue`, {
+  io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-queue`, {
     action: "delete",
     queueId: +queueId
   });

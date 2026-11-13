@@ -6,6 +6,7 @@ import ShowService from "./ShowService";
 import Queue from "../../models/Queue";
 import Contact from "../../models/Contact";
 import User from "../../models/User";
+import Ticket from "../../models/Ticket";
 
 interface ScheduleData {
   id?: number;
@@ -56,6 +57,34 @@ const UpdateUserService = async ({
 
     if (!queue || queue.companyId !== companyId) {
       throw new AppError("Queue does not belong to the same company", 403);
+    }
+  }
+
+  if (contactId) {
+    const contact = await Contact.findOne({
+      where: { id: contactId, companyId },
+      attributes: ["id"]
+    });
+    if (!contact) {
+      throw new AppError("Contact does not belong to the same company", 403);
+    }
+  }
+  if (ticketId) {
+    const ticket = await Ticket.findOne({
+      where: { id: ticketId, companyId },
+      attributes: ["id"]
+    });
+    if (!ticket) {
+      throw new AppError("Ticket does not belong to the same company", 403);
+    }
+  }
+  if (userId) {
+    const owner = await User.findOne({
+      where: { id: userId, companyId },
+      attributes: ["id"]
+    });
+    if (!owner) {
+      throw new AppError("User does not belong to the same company", 403);
     }
   }
 

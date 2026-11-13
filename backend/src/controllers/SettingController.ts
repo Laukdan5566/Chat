@@ -28,6 +28,14 @@ export const index = async (req: Request, res: Response): Promise<Response> => {
   return res.status(200).json(settings);
 };
 
+export const SUPER_ONLY_SETTINGS = [
+  "fpOpsUrl",
+  "fpOpsEnabled",
+  "zammadUrl",
+  "zammadEnabled",
+  "campaignsEnabled"
+];
+
 export const update = async (
   req: Request,
   res: Response
@@ -40,6 +48,11 @@ export const update = async (
     throw new AppError("ERR_NO_PERMISSION", 403);
   }
 
+  // destino das integrações e flags de plano: só o super (PUT /companies/:id) altera
+  if (SUPER_ONLY_SETTINGS.includes(key) && !req.user.isSuper) {
+    throw new AppError("ERR_NO_PERMISSION", 403);
+  }
+
   const setting = await UpdateSettingService({
     key,
     value,
@@ -47,7 +60,7 @@ export const update = async (
   });
 
   const io = getIO();
-  io.emit(`company-${companyId}-settings`, {
+  io.to(`company-${companyId}-mainchannel`).emit(`company-${companyId}-settings`, {
     action: "update",
     setting
   });
