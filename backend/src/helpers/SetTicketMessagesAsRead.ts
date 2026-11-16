@@ -8,10 +8,12 @@ import GetTicketWbot from "./GetTicketWbot";
 
 const SetTicketMessagesAsRead = async (ticket: Ticket): Promise<void> => {
   await ticket.update({ unreadMessages: 0 }, { silent: true });
-  let companyId: number;
+  const { companyId } = ticket;
 
   try {
-    const wbot = await GetTicketWbot(ticket);
+    // webchat/Meta não têm sessão do WhatsApp: só zera o contador e marca no banco
+    const wbot =
+      ticket.channel === "whatsapp" ? await GetTicketWbot(ticket) : null;
 
     if (wbot) {
       const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -64,7 +66,6 @@ const SetTicketMessagesAsRead = async (ticket: Ticket): Promise<void> => {
                 );
               });
           }
-          companyId = messages[0]?.companyId;
           isFirstBatch = false;
         }
 
@@ -114,15 +115,13 @@ const SetTicketMessagesAsRead = async (ticket: Ticket): Promise<void> => {
   }
 
   const io = getIO();
-  if (companyId) {
-    io.to(ticket.id.toString())
-      .to(`company-${companyId}-${ticket.status}`)
-      .to(`queue-${ticket.queueId}-${ticket.status}`)
-      .emit(`company-${companyId}-ticket`, {
-        action: "updateUnread",
-        ticketId: ticket.id
-      });
-  }
+  io.to(ticket.id.toString())
+    .to(`company-${companyId}-${ticket.status}`)
+    .to(`queue-${ticket.queueId}-${ticket.status}`)
+    .emit(`company-${companyId}-ticket`, {
+      action: "updateUnread",
+      ticketId: ticket.id
+    });
 };
 
 export default SetTicketMessagesAsRead;
